@@ -1,17 +1,17 @@
+ccc
+
 EarthFileName='/Users/antonermakov/Earth/srtmp2160.ret_shape';
 MoonFileName='/Users/antonermakov/GRAIL/Topography/SH/LRO_LTM05_2050_SHA.TAB.txt';
 VenusFileName='/Users/antonermakov/Venus/VenusTopo719.shape';
 MarsFileName='/Users/antonermakov/Mars/MarsTopo719.shape';
 
 % VestaMatFileName='VestaHASTALAVESTAshape_sh1000.mat';
-VestaMatFileName='~/Dawn/Balmino2/VestaTest/SH_VestaHASTALAVESTAshape_6min';
-
-
+VestaMatFileName='~/Dawn/SH/AnalysisSynthesis/VestaTest/SH_VestaHASTALAVESTAshape_6min';
 
 %% Vesta topo sh
 
 % load(VestaMatFileName);lmcosi=lmcosi_shape;
-lmcosi=ReadBalminoSH2(VestaMatFileName);
+lmcosi_Vesta=ReadBalminoSH2(VestaMatFileName);
 
 %% Planets topo sh
 lmcosi_Moon=load(MoonFileName);
@@ -19,6 +19,7 @@ lmcosi_Venus=load(VenusFileName);
 lmcosi_Mars=load(MarsFileName);
 lmcosi_Earth=load(EarthFileName);
 
+lmcosi_Ceres(:,3:4)=lmcosi_Ceres(:,3:4)*1000;
 
 % lmcosi_Moon(:,3)=lmcosi_Moon(:,3)/lmcosi_Moon(1,3);
 % lmcosi_Moon(:,4)=lmcosi_Moon(:,4)/lmcosi_Moon(1,3);
@@ -36,8 +37,6 @@ lmcosi_Earth=load(EarthFileName);
 %  lmcosi(:,4)=lmcosi(:,4)/lmcosi(1,3);
 
 
-
-
 % [sdl_Moon,l_Moon,bta_Moon,lfit_Moon,logy_Moon,logpm_Moon]=plm2spec(lmcosi_Moon);
 % [sdl_Venus,l_Venus,bta_Venus,lfit_Venus,logy_Venus,logpm_Venus]=plm2spec(lmcosi_Venus);
 % [sdl_Mars,l_Mars,bta_Mars,lfit_Mars,logy_Mars,logpm_Mars]=plm2spec(lmcosi_Mars);
@@ -47,11 +46,10 @@ lmcosi_Earth=load(EarthFileName);
 [k_Mars,sdl_Mars]=PowerSpectrum(lmcosi_Mars);
 [k_Venus,sdl_Venus]=PowerSpectrum(lmcosi_Venus);
 [k_Earth,sdl_Earth]=PowerSpectrum(lmcosi_Earth);
-[k_Vesta,sdl_Vesta]=PowerSpectrum(lmcosi);
+[k_Vesta,sdl_Vesta]=PowerSpectrum(lmcosi_Vesta);
+[k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_Ceres);
 
-
-
-figure1 = figure('XVisual','','Color',[1 1 1],'Position',[1 1 1400 1000]);
+figure1 = figure('Color',[1 1 1]);
 
 % Create axes
 axes1 = axes('Parent',figure1,'ZColor',[1 1 1],...
@@ -66,7 +64,7 @@ axes1 = axes('Parent',figure1,'ZColor',[1 1 1],...
     'XMinorGrid','on',...
     'XColor',[0 0 0],...
     'FontSize',12,...
-    'FontName','Times New Roman',...
+    'FontName','Helvetica',...
     'Color',[1 1 1]);
 box(axes1,'on');
 hold(axes1,'all');
@@ -91,6 +89,8 @@ loglog(k_Earth,sdl_Earth,'c','MarkerFaceColor','b','MarkerSize',1,'Marker','o',.
     'LineWidth',1);
 loglog(k_Vesta,sdl_Vesta,'m','MarkerFaceColor','b','MarkerSize',1,'Marker','o',...
     'LineWidth',1);
+loglog(k_Ceres,sdl_Ceres,'k','MarkerFaceColor','k','LineWidth',2,'MarkerSize',1,'Marker','o',...
+    'LineWidth',1);
 
 
 
@@ -107,8 +107,6 @@ loglog(k_Vesta,sdl_Vesta,'m','MarkerFaceColor','b','MarkerSize',1,'Marker','o',.
 % loglog(lfit_Mars,logpm_Mars,'--b','LineWidth',1);
 % loglog(lfit_Vesta,logpm_Vesta,'--y','LineWidth',1);
 
-
-
 % title({['Moon spectral slope = ' num2str(bta_Moon)],...
 %     ['Venus spectral slope = ' num2str(bta_Venus)],...
 %     ['Mars spectral slope = ' num2str(bta_Mars)],...
@@ -116,22 +114,19 @@ loglog(k_Vesta,sdl_Vesta,'m','MarkerFaceColor','b','MarkerSize',1,'Marker','o',.
 %     'fontsize',25,'Color','w');
 
 
-
 grid on;
-
 
 ylabel('Total power [km^3]');
 xlabel('k [cycles/km]');
 
 % title('Energy spectral density of topography','Color','w');
 
-
 p_Earth = polyfit(log10(k_Earth),log10(sdl_Earth),1);
 p_Moon = polyfit(log10(k_Moon),log10(sdl_Moon),1);
 p_Venus = polyfit(log10(k_Venus),log10(sdl_Venus),1);
 p_Mars = polyfit(log10(k_Mars),log10(sdl_Mars),1);
 p_Vesta = polyfit(log10(k_Vesta),log10(sdl_Vesta),1);
-
+p_Ceres = polyfit(log10(k_Ceres),log10(sdl_Ceres),1);
 
 % loglog(k_Earth,(10.^p_Earth(2))*(k_Earth.^p_Earth(1)),'-c','markersize',0.1);
 % loglog(k_Venus,(10.^p_Venus(2))*(k_Venus.^p_Venus(1)),'-g','markersize',0.1);
@@ -147,9 +142,7 @@ p_Vesta = polyfit(log10(k_Vesta),log10(sdl_Vesta),1);
 %     ['Vesta \approx ' num2str(10.^p_Vesta(2),'%3.2e') '\cdotk^{' num2str(p_Vesta(1),'%3.2f') '}' ', D = ' num2str((5+p_Vesta(1))/2,'%3.2f')] }...
 %     ,'TextColor','k','fontsize',12);
 
-legend({'Moon','Venus','Mars','Earth','Vesta'},'FontSize',12,'Location','SouthWest');
-
-
+legend({'Moon','Venus','Mars','Earth','Vesta','Ceres'},'FontSize',12,'Location','SouthWest');
 
 set(gcf, 'Units','centimeters', 'Position',[0 0 13 9])
 set(gcf, 'PaperPositionMode','auto')
