@@ -6,16 +6,16 @@ im_size=[0 0 13 9];
 
 %% Load OpNav shape
 
-shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_150604_GRAVITY_SPC/';
-shape_filename='SHAPE_SPC150604.bds';
+shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150702_GRAVITY_SPC/';
+shape_filename='SHAPE_SPC150702_256.bds';
 fig_folder='~/Dawn/Papers/CeresPaper1/';
 
 [~,shapename,~] = fileparts(shape_filename) ;
 
 full_filename = [shape_folder shape_filename];
 
-step = 0.5;
-Npts = 10000;
+step = 0.1;
+Npts = 100000;
 [x_grid,y_grid,z_grid]=ReadSPC(full_filename,step,'grid');
 [x_rand,y_rand,z_rand]=ReadSPC(full_filename,Npts,'rand');
 
@@ -144,7 +144,7 @@ plot(l_ell(1:2:end),sdl_ell(1:2:end),...
 
 xlabel('Degree []','FontSize',fntsize);
 ylabel('Spectral density  []','FontSize',fntsize);
-set(gcf, 'Units','centimeters', 'Position',imsize)
+set(gcf, 'Units','centimeters', 'Position',im_size)
 box on;
 
 % xlim([0 10]);
@@ -158,6 +158,8 @@ box on;
 
 %%
 
+% [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
+lmcosi_ceres(:,3:4)=lmcosi_ceres(:,3:4)*1000;
 [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
 
 figure;
@@ -175,13 +177,16 @@ plot(k_Ceres,sdl_Ceres,'-k');
 xlabel('Frequency [cycles/km]','FontSize',fntsize);
 ylabel('Topography power [km^3]','FontSize',fntsize);
 
-xlim([5*1e-1 2e2]);
-set(gca,'XTick',[1 10 100 1000]);
+% xlim([5*1e-1 2e2]);
+set(gca,'XTick',10.^(-5:1:0));
+set(gca,'YTick',10.^(0:2:16));
+
+xlim([1e-5 1e0]);
+ylim([1e0 1e15]);
 
 legend({'Ceres'},'FontSize',fntsize_sm);
 
-
-PrintWhite([fig_folder 'Fig_spectrum.eps']);
+PrintWhite([fig_folder 'Fig_spectrum.jpg']);
 
 
 
