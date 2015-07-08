@@ -17,13 +17,13 @@ shape_filename='SHAPE_SPC150702_256.bds';
 
 full_filename = [shape_folder shape_filename];
 
-MaxDegreeTopo=35;
+MaxDegreeTopo=23;
 Resolution=0.75;
-L=6;
-MinConcentration=0.93;
+L=5;
+MinConcentration=0.80;
 NTess=3;
-circle_rad=35;
-gd=2+2+L:MaxDegreeTopo-L+1;
+circle_rad=30;
+gd=1+2+L:MaxDegreeTopo-L+1;
 
 a=481.000;
 c=446.000;
@@ -105,28 +105,41 @@ for j=1:numel(fii)
         [sdl(:,i),l,~,~,~]=...
             plm2spec(lmcosi_shape_w{i});
         
-        p=polyfit(log10(l(gd)),log10(sdl(gd,i)),1);
-        bta(i)=p(1);
+        p=polyfit(log10(l(gd)),log10(sdl(gd,i)),2);
+        
+        aq=p(1);
+        bq=p(2);
+        
+        xq(i) = mean(log10(l(gd)));
+        
+        curv(i) = 2*aq/((1+(bq+2*aq*xq(i)).^2).^1.5);
+        bta(i) = p(1);
+              
+%         p = polyfit(log10(l(gd)),log10(sdl_mean(gd,j)),2);
     end
     
     progressbar(j/numel(fii));
     bta_mean(j)=mean(bta);
+    curv_mean(j)=mean(curv);
     
     if (NumberOfTapers>1)
         sdl_mean(:,j)=mean(sdl,2);
+        
     else
         sdl_mean(:,j)=(sdl);
     end
 end
 
-%% Plot latitude vs power spectrum slope
+
+
+%% Plot latitude vs spectrum curv
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
 set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
 hold on;box on;grid on;
 
-scatter(fii',bta_mean,40,lambdai','filled');
+scatter(fii',curv_mean,40,lambdai','filled');
 
 xlabel('Latitude [deg]','FontSize',fntsize);
 ylabel('Spectral slope','FontSize',fntsize);
@@ -147,16 +160,16 @@ set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
 hold on;box on;grid on;
 
-scatter(lambdai,fii',40,bta_mean,'filled');
+scatter(lambdai,fii',40,curv_mean,'filled');
 
 xlim([-180 180]);
 ylim([-90 90]);
 
-
+colorbar
 %% Plot power spectum slope as map
 
 Li=20;
-lmcosi_b=xyz2plm(bta_mean,Li,'irr',fii,lambdai);
+lmcosi_b=xyz2plm(curv_mean,Li,'irr',fii,lambdai);
 
 [bta_mean_sh,lon,lat]=plm2xyz(lmcosi_b,0.5);
 [lon,lat]=meshgrid(lon,lat);
@@ -169,12 +182,6 @@ pcolorm(fi_grid*180/pi,lambda_grid*180/pi,Hi); shading interp;
 colormap jet;
 caxis([-7 7]);
 colorbar
-
-
-
-
-
-
 
 
 
