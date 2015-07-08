@@ -20,8 +20,6 @@ for i=1:MaxDegree
    lambda_linear=lambda*Rref;
    k(i)=1/lambda_linear;   
    
-   
-   
    sdl(i)=2*pi*Rref*Rref*Rref*sum((lmcosi(a1:a2,3).^2)+(lmcosi(a1:a2,4).^2));
         
 end 
