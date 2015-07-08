@@ -160,7 +160,10 @@ box on;
 
 % [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
 lmcosi_ceres(:,3:4)=lmcosi_ceres(:,3:4)*1000;
+
+lmcosi_ceres(4,3)=0;
 [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
+
 
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
@@ -172,7 +175,34 @@ set(gca,'FontSize',fntsize);
 set(gca,'XScale','log');
 set(gca,'YScale','log');
 
-plot(k_Ceres,sdl_Ceres,'-k');
+h = plot(k_Ceres,sdl_Ceres,'-k');
+
+[pfit,S] = polyfit(log10(k_Ceres),...
+    log10(sdl_Ceres),1);
+%[log_sdl_Ceres_err,log_delta_sdl] = polyval(pfit,log10(k_Ceres),S);
+[log_sdl_Ceres_err,log_delta_sdl] = polyconf(pfit,log10(k_Ceres),S);
+
+h_fit1 = plot(k_Ceres,10.^log_sdl_Ceres_err,'-r','LineWidth',1);
+
+plot(k_Ceres,10.^(log_sdl_Ceres_err+log_delta_sdl),...
+    '--r','LineWidth',1);
+plot(k_Ceres,10.^(log_sdl_Ceres_err-log_delta_sdl),...
+    '--r','LineWidth',1);
+
+
+ind_fit=(k_Ceres>4e-3);
+
+[pfit,S] = polyfit(log10(k_Ceres(ind_fit)),...
+    log10(sdl_Ceres(ind_fit)),1);
+[log_sdl_Ceres_err,log_delta_sdl] = polyconf(pfit,log10(k_Ceres),S);
+
+h_fit2 = plot(k_Ceres,10.^log_sdl_Ceres_err,'-b','LineWidth',1);
+
+plot(k_Ceres,10.^(log_sdl_Ceres_err+log_delta_sdl),...
+    '--b','LineWidth',1);
+plot(k_Ceres,10.^(log_sdl_Ceres_err-log_delta_sdl),...
+    '--b','LineWidth',1);
+
 
 xlabel('Frequency [cycles/km]','FontSize',fntsize);
 ylabel('Topography power [km^3]','FontSize',fntsize);
@@ -184,9 +214,9 @@ set(gca,'YTick',10.^(0:2:16));
 xlim([1e-5 1e0]);
 ylim([1e0 1e15]);
 
-legend({'Ceres'},'FontSize',fntsize_sm);
+legend([h h_fit1 h_fit2],{'Ceres','Fit 1','Fit 2'},'FontSize',fntsize_sm);
 
-PrintWhite([fig_folder 'Fig_spectrum.jpg']);
+PrintWhite([fig_folder 'Fig_spectrum_fit.jpg']);
 
 
 
