@@ -11,10 +11,9 @@ shape_filename='SHAPE_SPC150702_256.bds';
 fig_folder='~/Dawn/Papers/CeresPaper1/';
 
 [~,shapename,~] = fileparts(shape_filename) ;
-
 full_filename = [shape_folder shape_filename];
 
-step = 0.1;
+step = 0.166666666666665;
 Npts = 100000;
 [x_grid,y_grid,z_grid]=ReadSPC(full_filename,step,'grid');
 [x_rand,y_rand,z_rand]=ReadSPC(full_filename,Npts,'rand');
@@ -22,6 +21,9 @@ Npts = 100000;
 r_grid=sqrt(x_grid.^2+y_grid.^2+z_grid.^2);
 r_rand_vec = [x_rand' y_rand' z_rand'];
 V = Mesh2Volume(x_grid,y_grid,z_grid);
+
+[lon_grid,lat_grid,r_grid]=cart2sph(x_grid,y_grid,z_grid);
+[lon_rand,lat_rand,r_rand]=cart2sph(x_rand,y_rand,z_rand);
 
 %% Compute the best-fit ellipsoid
 
@@ -111,7 +113,7 @@ cref_vesta=226;
 r_ell=TriEllRadVec(fi,lambda,aref,bref,cref,'rad');
 % r_ell_vesta=TriEllRadVec(fi,lambda,aref_vesta,bref_vesta,cref_vesta,'rad');
 
-lmcosi_ceres = xyz2plm(r_grid',L,'im');
+lmcosi_ceres = xyz2plm((r_grid'),L,'im');
 lmcosi_ell = xyz2plm(r_ell',L);
 
 % lmcosi_ell_vesta = xyz2plm(r_ell_vesta',L);
@@ -137,6 +139,7 @@ plot(l,sdl,'ro-','LineWidth',2,'MarkerSize',5,...
 
 plot(l_ell(1:2:end),sdl_ell(1:2:end),...
     'r*--','LineWidth',2,'MarkerSize',5);
+
 % plot(l_vesta,sdl_vesta,'bo-','LineWidth',3,'MarkerSize',20,'MarkerFaceColor','b');
 % plot(l_ell_vesta(1:2:end),sdl_ell_vesta(1:2:end),'b*--','LineWidth',3,'MarkerSize',20);
 
@@ -161,9 +164,9 @@ box on;
 % [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
 lmcosi_ceres(:,3:4)=lmcosi_ceres(:,3:4)*1000;
 
-lmcosi_ceres(4,3)=0;
+% lmcosi_ceres(4,3)=0;
 [k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
-
+[k_Ceres2,sdl_Ceres2]=PowerSpectrum(lmcosi_ceres2);
 
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
@@ -175,7 +178,8 @@ set(gca,'FontSize',fntsize);
 set(gca,'XScale','log');
 set(gca,'YScale','log');
 
-h = plot(k_Ceres,sdl_Ceres,'-k');
+h = plot(k_Ceres,sdl_Ceres,'-r');
+h2 = plot(k_Ceres2,sdl_Ceres2,'-b');
 
 [pfit,S] = polyfit(log10(k_Ceres),...
     log10(sdl_Ceres),1);
@@ -203,7 +207,6 @@ plot(k_Ceres,10.^(log_sdl_Ceres_err+log_delta_sdl),...
 plot(k_Ceres,10.^(log_sdl_Ceres_err-log_delta_sdl),...
     '--b','LineWidth',1);
 
-
 xlabel('Frequency [cycles/km]','FontSize',fntsize);
 ylabel('Topography power [km^3]','FontSize',fntsize);
 
@@ -213,15 +216,32 @@ set(gca,'YTick',10.^(0:2:16));
 
 xlim([1e-5 1e0]);
 ylim([1e0 1e15]);
+legend([h h2],{'Ceres JPL','Ceres DLR'},'FontSize',fntsize_sm);
 
 legend([h h_fit1 h_fit2],{'Ceres','Fit 1','Fit 2'},'FontSize',fntsize_sm);
 
-PrintWhite([fig_folder 'Fig_spectrum_fit.jpg']);
+PrintWhite([fig_folder 'Fig_spectrum_DLR_JPL.jpg']);
 
 
+%% Correlation
 
-
-
+% figure;
+% set(gcf, 'Units','centimeters', 'Position',im_size)
+% set(gcf, 'PaperPositionMode','auto')
+% set(gca, 'FontSize',fntsize);
+% hold on;box on;grid on;
+% corr=SphericalHarmonicCorrelation(lmcosi_ceres,lmcosi_ceres2);
+% 
+% plot(corr,'-k')
+% 
+% xlabel('Spherical harmonics degree','FontSize',fntsize);
+% ylabel('Correlation','FontSize',fntsize);
+% 
+% 
+% PrintWhite([fig_folder 'Fig_Corr.jpg']);
+% 
+% r = plm2xyz(lmcosi_ceres,1);
+% r2 = plm2xyz(lmcosi_ceres2,1);
 
 
 
