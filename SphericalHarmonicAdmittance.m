@@ -1,31 +1,25 @@
-function Adm=SphericalHarmonicAdmittance(lmcosi1,lmcosi2)
+function [n,Z]=SphericalHarmonicAdmittance(lmcosi_grav,lmcosi_shape,mu,Rref)
 
-MaxDegree=min(lmcosi1(end,1),lmcosi2(end,1));
+R0 = lmcosi_shape(1,3);
 
-Adm=zeros(1,MaxDegree);
+MaxDegree=min(lmcosi_grav(end,1),lmcosi_shape(end,1));
 
+deg = lmcosi_grav(:,1); 
+lmcosi_grav(:,3)=lmcosi_grav(:,3).*(deg+1)*mu/(Rref^2).*1e5;
+lmcosi_grav(:,4)=lmcosi_grav(:,4).*(deg+1)*mu/(Rref^2).*1e5;
 
+n = 2:MaxDegree;
+Z=zeros(1,numel(n));
 
-for i=3:MaxDegree+1;
-    
-    i_start=(i-1)*(i)/2+1;
-    i_end=(i)*(i+1)/2;   
-    
-    
-    
-    Adm(i-1)=sum(lmcosi1(i_start:i_end,3).*lmcosi2(i_start:i_end,3)+lmcosi1(i_start:i_end,4).*lmcosi2(i_start:i_end,4))./...
-        sum(lmcosi2(i_start:i_end,3).^2+lmcosi2(i_start:i_end,4).^2);
-         
+for i=1:numel(n)   
+    i1=(n(i))*(n(i)+1)/2+1;
+    i2=(n(i)+1)*(n(i)+2)/2;   
+  
+    Z(i)=sum(lmcosi_grav(i1:i2,3).*lmcosi_shape(i1:i2,3)+....
+             lmcosi_grav(i1:i2,4).*lmcosi_shape(i1:i2,4))./...
+         sum(lmcosi_shape(i1:i2,3).^2+lmcosi_shape(i1:i2,4).^2);       
 end
 
-% n=1:MaxDegree;
+Z=Z*1000;
 
-
-% figure;
-% plot(n,Adm,'o-','Color',color,'LineWidth',4,'MarkerSize',2);
-% title('Gravity/Topography Admittance','FontSize',25,'FontName','Times');
-% xlabel('Degree','FontSize',25,'FontName','Times');
-% 
-% grid on;
-% hold on;
-% 
+%((R0/Rref).^deg)
