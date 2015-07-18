@@ -1,4 +1,4 @@
-ccc
+% ccc
 
 %% plotting settings
 fntsize = 12;
@@ -9,19 +9,20 @@ im_size=[0 0 13 9];
 
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150702_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150702_256.bds';
-step = 0.5;
+step = .5;
 Rref = 476000;
 D = 30000;
 rho_crust = 1000;
 rho_mantle = 2300;
-nmaxt = 100;
-nmaxgt = 20;
-hmaxt = 1;
+nmaxt = 360;
+hmaxt = 5;
+nmaxgt = 6;
+
 GM = 62.6253e9;
 G = 6.67384e-11;
 
-aref=481000;
-cref=446000;
+aref=1.3*481000;
+cref=1.3*446000;
 
 %% Read shape data
 
@@ -31,6 +32,11 @@ full_filename = [shape_folder shape_filename];
 [x_grid,y_grid,z_grid]=ReadSPC(full_filename,step,'grid');
 [lon_grid,lat_grid,r_grid] = cart2sph(x_grid,y_grid,z_grid);
 r_grid=flipud(r_grid')*1000;
+
+wr = 0.5*(r_grid(:,1)+r_grid(:,end));
+
+r_grid(:,1) = wr;
+r_grid(:,end)=wr;
 
 [xref,yref,zref]=TriEllRadVec(lat_grid,lon_grid,aref,aref,cref,'xyz');
 
@@ -42,6 +48,11 @@ rho_mean = GM/G/V/1e9;
 lmcosi_shape = xyz2plm(r_grid,nmaxt,'im');
 R0 = lmcosi_shape(1,3);
 
+% lmcosi_shape(2:end,3:4)=lmcosi_shape(2:end,3:4)/10;
+% lmcosi_shape(4:6,3:4)=lmcosi_shape(4:6,3:4)/1000;
+% lmcosi_shape(22,3)=lmcosi_shape(22,3)*1000;
+% r_grid = plm2xyz(lmcosi_shape,step);
+
 lmcosi_gravtopo2 = TopoSH2GravitySH(...
     r_grid,GM,rho_mean,Rref,nmaxt,nmaxgt,hmaxt);
 
@@ -50,7 +61,6 @@ lmcosi_gravtopo = Topo2Grav(...
 
 lmcosi_isosgrav = Topo2IsosGrav(...
     r_grid,Rref,D,rho_crust,rho_mantle,rho_mean,nmaxt,nmaxgt,hmaxt);
-
 
 [ax_gt,ay_gt,az_gt]=GravityAcceleration(...
     GM,Rref,lmcosi_gravtopo,xref,yref,zref);
@@ -68,7 +78,7 @@ pcolorm(lat_grid*180/pi,lon_grid*180/pi,g_up_gt);
 
 [R_homo]   = SphericalHarmonicCorrelation(lmcosi_gravtopo2,lmcosi_shape);
 
-Z_theo  = 3./(2*(n_homo)+1).*((R0/Rref).^n_homo).*(n_homo+1)*GM/(Rref^2)*1e5/1000;
+Z_theo  = 3./(2*(n_homo)+1).*((R0/Rref).^n_homo).*(n_homo+1)*GM/(Rref^2)*1e5/R0*1000;
 
 %% Plot admittances 
 
@@ -88,3 +98,27 @@ legend([h_homo2 h_homo h_isos h_theo],{'Homo','Homo2','Isostatic','Theor'},...
 
 xlabel('Spherical harmonic degree','FontSize',fntsize);
 ylabel('Admittance []','FontSize',fntsize);
+
+
+%% 
+
+% lmcosi_grav_diff = lmcosi_gravtopo;
+% lmcosi_grav_diff(:,3:4) = lmcosi_grav_diff(:,3:4) - lmcosi_gravtopo2(:,3:4);
+% 
+% [sdl,l]=plm2spec(lmcosi_gravtopo);
+% [sdl_diff,l_diff]=plm2spec(lmcosi_grav_diff);
+% 
+% 
+% figure; hold on;
+% set(gca,'YScale','log');
+% set(gca,'XScale','log')
+% 
+% plot(l,sdl,'-','Color','r');
+% plot(l_diff,sdl_diff,'-','Color','b');
+% 
+
+
+
+
+
+
