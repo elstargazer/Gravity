@@ -12,15 +12,15 @@ shape_filename='SHAPE_SPC150702_256.bds';
 [~,shapename,~] = fileparts(shape_filename) ;
 full_filename = [shape_folder shape_filename];
 
-GM = 62.6253e9;
-G = 6.67384e-11;
-Rref=476000;
-aref=481000;
-cref=446000;
-step = 0.5;
-r1 = 470000;
-T = 9.073859324514187; % DLR
-Npts = 50;
+GM    = 62.6253e9;
+G     = 6.67384e-11;
+Rref  = 476000;
+aref  = 481000;
+cref  = 446000;
+step  = 0.5;
+r1    = 470000;
+T     = 9.073859324514187; % DLR
+Npts  = 50;
 
 rhomean=2150;
 M=GM/G;
@@ -44,7 +44,7 @@ z_grid=z_grid*1000;
 eccref=Eccentricity(aref,cref);
 [B,L,H]=XYZ2BLH(x_grid,y_grid,z_grid,aref,eccref);
 
-% lmcosi_topo = xyz2plm(r_grid,L);
+lmcosi_t = xyz2plm(flipud(r_grid'),MaxDegreeTopo);
 
 %% get gravity model in SH
 
@@ -161,6 +161,11 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,g_up_gt1*1e5,'GT.dat');
 a_Jh = zeros(size(r2_Jh));
 c_Jh = a_Jh;
 
+%% Compute subsurface interface
+
+lmcosi_sub = FindSubRelief(...
+    lmcosi_g,lmcosi_t,GM,Rref,rho1i(130),rho2i(130),r2i(130),T);
+
 %% Anomaly animation
 
 fig_anim = figure('Position',[1 1 1000 1000]);
@@ -251,14 +256,24 @@ colorbar('FontSize',fntsize);
 
 lmcosi_g_noJ2 = lmcosi_g;
 lmcosi_gt_noJ2 = lmcosi_gt;
+lmcosi_t_noJ2 = lmcosi_t;
+
 lmcosi_g_noJ2(4,3)=0;
 lmcosi_gt_noJ2(4,3)=0;
+lmcosi_t_noJ2(4,3)=0;
+
 
 cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
 cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
 cor_noJ2_2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_ryan);
 
 % Z_noJ2 = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_gt_noJ2);
+
+%% admittance
+
+[n_homo,Z]   = SphericalHarmonicAdmittance(lmcosi_g,lmcosi_t,GM,Rref);
+[n_homo_noJ2,Z_noJ2] = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_t_noJ2,GM,Rref);
+
 
 %% isostatic anomaly
 
