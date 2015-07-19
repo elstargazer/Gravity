@@ -1,70 +1,120 @@
-function lmcosi_sub = FindSubRelief(lmcosi_grav,lmcosi_shape,GM,rho1,rho2)
+function lmcosi_sub = FindSubRelief(lmcosi_g,lmcosi_t,GM,Rref,rho1,rho2,r2,T)
 
-nc = 5;
-eps_ri_mantle = 1;
+%% Parameters 
+G = 6.67384e-11;
+M = GM/G;
 
-Coef1=M*(2.*n+1).*((Rref./D_mantle).^n)./...
-    (4*pi*ro_mantle_diff.*(D_mantle^2));
+hmaxt  = 4;     % max power of topography
+nmaxg  = 2;     % max degree of gravity
+nmaxgt = nmaxg; % max degree of gravity from shape
+nmaxt  = 10;    % max degree of shape
+res    = 1;     % resolution [deg]
+nc     = 5;     % critical degree
+rtol   = 1;     % tolerance for subsurface relief [m]
 
-ll=1./(M*(2.*nc+1).*((Rref./D_mantle).^nc)./...
-    (4*pi*ro_mantle_diff.*(D_mantle^2))).^2;
+%% Computing hydrostatic state
 
-w=(1+ll.*(Coef1.^2)).^(-1);
+[ri,lon,lat] = plm2xyz(lmcosi_t,res);
+[lon,lat]    = meshgrid(lon,lat);
+lon = lon/180*pi;
+lat = lat/180*pi;
 
-lmcosi_mantle_shape_correction_1(:,3:4)=[w,w].*(lmcosi_ba(:,3:4)).*[Coef1,Coef1];
+r1 = lmcosi_t(1,3);
 
-lmcosi_mantle_shape_correction_full=lmcosi_mantle_shape_correction_1;
+[fh,~]=HydrostaticStateExact2l(r1,r2,T,rho1,rho2,0.1,0.1);
 
-dri_mantle=eps_ri_mantle+1;
+fp1 = fh(1);
+fp2 = fh(2);
 
-iter=1;
+drho      = rho2 - rho1;
+[a2,~,c2] = fr2abc(r2,fp2,0);
+M2        = muEllipsoid(a2,a2,c2,drho);
+M1        = M - M2;
 
-while (dri_mantle>eps_ri_mantle)
+%% Computing Bouguer anomaly
+
+ri2 = TriEllRadVec(lat,lon,a2,a2,c2,'rad');
+
+lmcosi_t2  = xyz2plm(ri2,nmaxt);
+
+lmcosi_gt2 = SHRotationalEllipsoid(a2,c2,nmaxg,Rref); 
+lmcosi_gt1 = Topo2Grav(ri,Rref,nmaxt,nmaxgt,hmaxt);
+
+lmcosi_gt        = lmcosi_gt1;
+lmcosi_gt(:,3:4) = (M1*lmcosi_gt1(:,3:4) + M2*lmcosi_gt2(:,3:4))/M;
+
+lmcosi_ba        = lmcosi_g;
+lmcosi_ba(:,3:4) = lmcosi_ba(:,3:4) - lmcosi_gt(:,3:4);
+
+%% Computing subrelief
+
+n = lmcosi_ba(:,1);
+
+A = M*(2.*n+1).*((Rref./r2).^n)./...
+    (4*pi*drho.*(r2^2));
+
+A = [A A];
+
+ll = 1./(M*(2.*nc+1).*((Rref./r2).^nc)./...
+    (4*pi*drho.*(r2^2))).^2;
+
+w = (1+ll.*(A.^2)).^(-1);
+
+lmcosi_sub = CreateEmptylmcosi(nmaxg);
+lmcosi_sub(:,3:4) = w.*lmcosi_ba(:,3:4).*A;
+lmcosi_sub_corr = lmcosi_sub;
+
+dro = rtol + 1;
+while (dro > rtol)
     
-    [ri_mantle_shape_correction,~]=plm2xyz(lmcosi_mantle_shape_correction_full,1);
+    lmcosi_sub_corr(:,3:4) = 0;
     
-    n=2;
-    
-    dri_mantle_fa_correction=eps_mantle_fa_correction+1;
-    
-    while (dri_mantle_fa_correction>eps_mantle_fa_correction)
+    for h=2:hmaxt
         
-        P=ones(numel(Degree),1);
+        ri2 = plm2xyz(lmcosi_sub,res);
+        ri2 = ri2 - r2;
         
-        for j=1:n
-            P=P.*(Degree+4-j);
+        lmcosi_sub_h = xyz2plm(ri2.^h,nmaxgt);
+        
+        P = ones(numel(n),1);
+        for j=1:h
+            P=P.*(n+4-j);
         end
         
-        Coef2=P./((D_mantle^n)*factorial(n).*(Degree+3));
-        
-        ri_mantle_shape_correction_n=ri_mantle_shape_correction.^n;
-        
-        [lmcosi_mantle_shape_correction_power,dw]=xyz2plm(ri_mantle_shape_correction_n,N_trunc,'im',[],[],[]);
-        
-        lmcosi_mantle_shape_fa_correction(:,3:4)=[w, w].*D_mantle.*lmcosi_mantle_shape_correction_power(:,3:4).*[Coef2, Coef2];
-        
-        lmcosi_mantle_shape_correction_full(:,3:4)=lmcosi_mantle_shape_correction_1(:,3:4)-lmcosi_mantle_shape_fa_correction(:,3:4);
-        
-        % lmcosi_shape_mantle_new(:,3:4)=lmcosi_shape_mantle(:,3:4)+lmcosi_shape_correction(:,3:4);
-        %
-        % plotplm(lmcosi_shape_mantle_new,[],[],2,1,[],[],[]);
-        [ri_mantle_fa_correction,~]=plm2xyz(lmcosi_mantle_shape_fa_correction,1);
-        
-        dri_mantle_fa_correction=max(max(abs(ri_mantle_fa_correction)));
-        
-        n=n+1;
-        
+        P = [P P];        
+        B = P./((r2.^h).*factorial(h).*([n n]+3));
+            
+        lmcosi_sub_corr(:,3:4) = lmcosi_sub_corr(:,3:4) + ...
+            w.*r2.*lmcosi_sub_h(:,3:4).*B;
     end
     
-    lmcosi_mantle_shape_new(:,3:4)=lmcosi_mantle_shape(:,3:4)+lmcosi_mantle_shape_correction_full(:,3:4);
+    lmcosi_sub(:,3:4) = lmcosi_sub(:,3:4) - lmcosi_sub_corr(:,3:4);
     
-    % plotplm(lmcosi_mantle_shape_new,[],[],2,1,[],[],[]);
-    [ri_mantle_new,~]=plm2xyz(lmcosi_mantle_shape_new,1);
+    ri2_old = ri2;
+    ri2 = plm2xyz(lmcosi_sub,res);
     
-    dri_mantle=max(max(abs(ri_mantle_new-ri_mantle)));
-    
-    ri_mantle=ri_mantle_new;
-    
-    iter=iter+1;
+    dro = ri2 - ri2_old;
+    dro = max(abs(dro(:)));
+    dro
     
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
