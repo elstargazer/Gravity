@@ -1,4 +1,4 @@
-ccc
+% ccc
 
 %% plotting settings
 fntsize = 12;
@@ -164,7 +164,7 @@ c_Jh = a_Jh;
 %% Compute subsurface interface
 
 lmcosi_sub = FindSubRelief(...
-    lmcosi_g,lmcosi_t,GM,Rref,rho1i(130),rho2i(130),r2i(130),T);
+    lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(69),rho2_Jh(69),r2_Jh(69),T);
 
 %% Anomaly animation
 
