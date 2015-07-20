@@ -1,4 +1,4 @@
-function lmcosi_sub = FindSubRelief(lmcosi_g,lmcosi_t,GM,Rref,rho1,rho2,r2,T)
+function lmcosi_sub_final = FindSubRelief(lmcosi_g,lmcosi_t,GM,Rref,rho1,rho2,r2,T)
 % This is a programs that computes subsurface interface given
 % observed gravity/shape & assumed densities.
 
@@ -12,7 +12,7 @@ nmaxgt = nmaxg;  % max degree of gravity from shape
 nmaxt  = 10;     % max degree of shape
 res    = 1;      % resolution [deg]
 nc     = 2;      % critical degree
-rtol   = 1;      % tolerance for subsurface relief [m]
+rtol   = 1e-1;   % tolerance for subsurface relief [m]
 aref   = 481000; % reference for Bouguer anomaly
 cref   = 446000; % reference for Bouguer anomaly
 
@@ -30,6 +30,8 @@ r1 = lmcosi_t(1,3);
 fp1 = fh(1);
 fp2 = fh(2);
 
+J2calc=RadFlat2J2(r1,r2,fp1,fp2,rho1,rho2,Rref);
+
 drho      = rho2 - rho1;
 [a2,~,c2] = fr2abc(r2,fp2,0);
 M2        = muEllipsoid(a2,a2,c2,drho)/G;
@@ -39,7 +41,7 @@ M1        = M - M2;
 
 ri2 = TriEllRadVec(lat,lon,a2,a2,c2,'rad');
 
-lmcosi_t2_ell  = xyz2plm(ri2,nmaxt);
+lmcosi_t2_ell  = xyz2plm(ri2,nmaxg);
 
 lmcosi_gt2 = SHRotationalEllipsoid(a2,c2,nmaxg,Rref); 
 lmcosi_gt1 = Topo2Grav(ri,Rref,nmaxt,nmaxgt,hmaxt);
@@ -76,9 +78,10 @@ ll = 1./(M*(2.*nc+1).*((Rref./r2).^nc)./...
     (4*pi*drho.*(r2^2))).^2;
 w = (1+ll.*(A.^2)).^(-1);
 
-lmcosi_sub = CreateEmptylmcosi(nmaxg);
+lmcosi_sub        = CreateEmptylmcosi(nmaxg);
 lmcosi_sub(:,3:4) = w.*lmcosi_ba(:,3:4).*A;
-lmcosi_sub_corr = lmcosi_sub;
+lmcosi_sub_corr   = lmcosi_sub;
+lmcosi_sub_final  = lmcosi_sub;
 
 dro = rtol + 1;
 
@@ -90,7 +93,7 @@ while (dro > rtol)
     
     for h=2:hmaxt
         
-        ri2 = plm2xyz(lmcosi_sub,res);
+        ri2 = plm2xyz(lmcosi_sub_final,res);
        
         lmcosi_sub_h = xyz2plm(ri2.^h,nmaxgt);
         
@@ -107,11 +110,10 @@ while (dro > rtol)
         lmcosi_sub_corr(1,3) = 0;
     end
     
-    lmcosi_sub(:,3:4) = lmcosi_sub(:,3:4) - lmcosi_sub_corr(:,3:4);
+    lmcosi_sub_final(:,3:4) = lmcosi_sub(:,3:4) - lmcosi_sub_corr(:,3:4);
+    
 %     lmcosi_sub(1,3) = r2;
-    
-    
-    ri2 = plm2xyz(lmcosi_sub,res);
+    ri2 = plm2xyz(lmcosi_sub_final,res);
     
     dro = ri2 - ri2_old;
     dro = max(abs(dro(:)));
@@ -120,14 +122,16 @@ while (dro > rtol)
     ri2_old = ri2;
 end
 
-lmcosi_sub(:,3:4) = lmcosi_t2_ell(:,3:4) + lmcosi_sub(:,3:4);
+% lmcosi_sub(:,3:4) = lmcosi_t2_ell(:,3:4) + lmcosi_sub(:,3:4);
+
+lmcosi_sub_final(:,3:4) = lmcosi_sub_final(:,3:4) + lmcosi_t2_ell(:,3:4);
 
 
+ri2_final = plm2xyz(lmcosi_sub_final,res);
 
-
-
-
-
+figure;
+pcolor(ri2_final); shading interp;
+colorbar;
 
 
 
