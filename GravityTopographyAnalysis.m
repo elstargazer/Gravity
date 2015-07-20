@@ -37,6 +37,9 @@ x_grid=x_grid*1000;
 y_grid=y_grid*1000;
 z_grid=z_grid*1000;
 
+V = Mesh2Volume(x_grid,y_grid,z_grid);
+rhomean = M/V;
+
 [lon_grid,lat_grid,r_grid]=cart2sph(x_grid,y_grid,z_grid);
 % reference ellipsoid surface
 [xref,yref,zref]=TriEllRadVec(lat_grid,lon_grid,aref,aref,cref,'xyz');
@@ -55,14 +58,9 @@ lmcosi_g = [0 0 1 0;
     2 1 -8.65e-7 -1.43e-5;
     2 2 2.34e-4 -2.71e-4];
 
-   lmcosi_gt_ryan = [0 0 1 0;
-    1 0 0 0;
-    1 1 0 0;
-    2 0 -1.14e-29 0;
-    2 1 -8.65e-79 -1.43e-59;
-    2 2 -0.291084874218D-04 0.716547885022D-03];
-
 J2obs = -lmcosi_g(4,3);
+
+lmcosi_gt1_ell = SHRotationalEllipsoid(481000,446000,2,Rref); 
 
 %% plot topography
 
@@ -90,6 +88,7 @@ M1 = 4/3*pi.*(r1.^3).*(rho1i);
 [f2i,f1i]=HydrostaticStateExact2lGrid(r1,r2i,T,rho1i,rho2i);
 
 J2hi=RadFlat2J2(r1,r2i,f1i,f2i,rho1i,rho2i,Rref);
+
 
 fig_todel = figure;
 CJhyd = contour(r2i,rho2i,J2hi,[J2obs J2obs]);
@@ -165,6 +164,18 @@ c_Jh = a_Jh;
 
 lmcosi_sub = FindSubRelief(...
     lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(69),rho2_Jh(69),r2_Jh(69),T);
+
+
+%% Crustal thickness map
+
+[ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);
+[lon,lat] = meshgrid(lon,lat);
+
+AGUaxes;
+pcolorm(lat,lon,(r1 - ri2_sub)/1000);
+cbar = colorbar('FontSize',20);
+ylabel(cbar,'Crustal thickness [km]','FontSize',20);
+
 
 %% Anomaly animation
 
