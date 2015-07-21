@@ -52,7 +52,7 @@ for h=2:hmaxt
     lmcosi_grav(:,3)=lmcosi_grav(:,3)+Coef2.*lmcosi_topo_power(:,3);
     lmcosi_grav(:,4)=lmcosi_grav(:,4)+Coef2.*lmcosi_topo_power(:,4);
     
-    IsosCoef =(((R0-D)/R0).^(n - (3*h-1))).*(rho_crust/delta_rho).^(h-1);
+    IsosCoef = (-1)^(h-1)*(((R0-D)/R0).^(n - (3*h-1))).*(rho_crust/delta_rho).^(h-1);
     
     lmcosi_isos(:,3)=lmcosi_isos(:,3)+Coef2.*IsosCoef.*lmcosi_topo_power(:,3);
     lmcosi_isos(:,4)=lmcosi_isos(:,4)+Coef2.*IsosCoef.*lmcosi_topo_power(:,4);
