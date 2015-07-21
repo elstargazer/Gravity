@@ -6,8 +6,8 @@ fntsize_sm = 10;
 im_size=[0 0 13 9];
 
 %% input parameters
-shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150702_GRAVITY_SPC/';
-shape_filename='SHAPE_SPC150702_256.bds';
+shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150716_GRAVITY_SPC/';
+shape_filename='SHAPE_SPC150716_256.bds';
 
 [~,shapename,~] = fileparts(shape_filename) ;
 full_filename = [shape_folder shape_filename];
@@ -104,7 +104,6 @@ M2_Jh   = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'linear');
 fp2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'linear');
 fp1_Jh   = griddata(r2i,rho2i,f1i,r2_Jh,rho2_Jh,'linear');
 
-
 M1_Jh = M - M2_Jh;
 
 fig1=figure;
@@ -113,10 +112,14 @@ set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
 hold on;grid on;
 
-plot(rho1_Jh,(r1-r2_Jh)/1000)
+plot(rho1_Jh,(r1-r2_Jh)/1000,'-b','LineWidth',3);
 
 xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
 ylabel('Shell thickness [km]','FontSize',fntsize);
+
+gi = ginput(1);
+ind = find(abs(rho1_Jh - gi(1)) == min(abs(rho1_Jh - gi(1))));
+plot(rho1_Jh(ind),(r1-r2_Jh(ind))/1000,'or','MarkerSize',10);
 
 % we have r1, r2_Jh, rho1_Jh, rho2_Jh = family of solutions for J2
 %% plot gravity
@@ -161,13 +164,35 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,g_up_gt1*1e5,'GT.dat');
 a_Jh = zeros(size(r2_Jh));
 c_Jh = a_Jh;
 
+%% compute Bouguer anomaly
+
+[a_Jh,~,c_Jh]=fr2abc(r2_Jh(ind),fp2_Jh(ind),0);
+lmcosi_gt2=SHRotationalEllipsoid(a_Jh,c_Jh,MaxDegreeGrav,Rref);
+w = [M1_Jh(ind)/M M2_Jh(ind)/M];
+    
+lmcosi_gt = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2});
+
+MaxDegreeBouguer=min([lmcosi_g(end,1) lmcosi_gt(end,1)]);
+lmcosi_ba = lmcosi_g;
+lmcosi_ba(:,3:4) = lmcosi_ba(:,3:4) - lmcosi_gt(:,3:4);
+
+[ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_ba,xref,yref,zref);
+[gba_up,gba_east,gba_north]=GravityComponents(...
+    ax,ay,az,xref,yref,zref,aref,cref);
+
+WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gba_up*1e5,'BA.dat');
+
+AGUaxes;
+pcolorm(lat_grid*180/pi,lon_grid*180/pi,gba_up*1e5); shading interp;
+colorbar('FontSize',fntsize);
+
 %% Compute subsurface interface
 
-fp1_Jh(69)
-fp2_Jh(69)
+fp1_Jh(ind)
+fp2_Jh(ind)
 
 lmcosi_sub = FindSubRelief(...
-    lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(69),rho2_Jh(69),r2_Jh(69),T);
+    lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(ind),rho2_Jh(ind),r2_Jh(ind),T);
 
 %% Crustal thickness map
 
@@ -257,7 +282,6 @@ for i=1:numel(r2_Jh)
     cbar = colorbar('FontSize',fntsize_sm);
     ylabel(cbar,'Crustal thickness [km]','FontSize',fntsize_sm);
     
-
     title(['$r_{2} = ' num2str(r2_Jh(i)/1000,'%6.2f') ' [km]$; '...
         '$\rho_{2} = ' num2str(rho2_Jh(i),'%6.2f') ' [kg/m^{3}]$; '...
         '$\rho_{1} = ' num2str(rho1_Jh(i),'%6.2f') ' [kg/m^{3}]$'],...
@@ -275,22 +299,7 @@ close(writerObj);
 % pcolorm(lat_grid,lon_grid,g_up_gt); shading interp;
 % colorbar('FontSize',fntsize);
 
-%% compute Bouguer anomaly
-
-MaxDegreeBouguer=min([lmcosi_g(end,1) lmcosi_gt(end,1)]);
-lmcosi_ba = lmcosi_g;
-lmcosi_ba(:,3:4) = lmcosi_ba(:,3:4) - lmcosi_gt(:,3:4);
-lmcosi_ba(4,3)=0;
-
-[ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_ba,xref,yref,zref);
-[gba_up,gba_east,gba_north]=GravityComponents(...
-    ax,ay,az,xref,yref,zref,aref,cref);
-
-WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gba_up*1e5,'BA.dat');
-
-AGUaxes;
-pcolorm(lat_grid*180/pi,lon_grid*180/pi,gba_up*1e5); shading interp;
-colorbar('FontSize',fntsize);
+%% Correlation
 
 lmcosi_g_noJ2 = lmcosi_g;
 lmcosi_gt_noJ2 = lmcosi_gt;
