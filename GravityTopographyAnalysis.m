@@ -169,7 +169,6 @@ fp2_Jh(69)
 lmcosi_sub = FindSubRelief(...
     lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(69),rho2_Jh(69),r2_Jh(69),T);
 
-
 %% Crustal thickness map
 
 [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);
@@ -182,7 +181,6 @@ pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
 cbar = colorbar('FontSize',20);
 ylabel(cbar,'Crustal thickness [km]','FontSize',20);
 
-
 %% Anomaly animation
 
 fig_anim = figure('Position',[1 1 1000 1000]);
@@ -190,7 +188,7 @@ hold on;
 
 fig_sub_2l  = subplot('Position',[0.5 0.6 0.45 0.35]);
 set(gca, 'FontSize',fntsize);
-hold on;grid on; box on
+hold on;grid on; box on;
 
 pl_shell     = plot(rho1_Jh,(r1-r2_Jh)/1000,'-k','LineWidth',2);
 pl_shell_pnt = plot(rho1_Jh(1),r1-r2_Jh(1)/1000,'or','MarkerSize',10);
@@ -210,16 +208,27 @@ ax_sub_map=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
 
 axis off;
 
+fig_sub_2l  = subplot('Position',[0.05 0.6 0.4 0.35]);
+set(gca, 'FontSize',fntsize);
+
+ax_sub_map2=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
+    'FontSize',24,'Grid','on','MLabelParallel',...
+    'equator','AngleUnits','degrees','LabelUnits','degrees','ParallelLabel'...
+    , 'on','MeridianLabel', 'on','GLineStyle','w--','GlineWidth',0.5,...
+    'FontColor',[0 0 0]...
+    ,'FontSize',fntsize_sm,'GAltitude',Inf,'Geoid',[1 0],...
+    'FEdgeColor',[0 0 0],'Frame','on');
+
 writerObj = VideoWriter('BA_Ceres2.avi');
 open(writerObj);
 
 for i=1:numel(r2_Jh)  
     
-    [a_Jh(i),~,c_Jh(i)]=fr2abc(r2_Jh(i),f2_Jh(i),0);
-    lmcosi_gt2=SHRotationalEllipsoid(a_Jh(i),c_Jh(i),MaxDegreeGrav,Rref); 
+    [a_Jh(i),~,c_Jh(i)]=fr2abc(r2_Jh(i),fp2_Jh(i),0);
+    lmcosi_gt2=SHRotationalEllipsoid(a_Jh(i),c_Jh(i),MaxDegreeGrav,Rref);
     w = [M1_Jh(i)/M M2_Jh(i)/M];
     
-    lmcosi_gt = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2});  
+    lmcosi_gt = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2});
     
     [ax_gt,ay_gt,az_gt]=GravityAcceleration(...
         GM,Rref,lmcosi_gt,xref,yref,zref);
@@ -237,6 +246,18 @@ for i=1:numel(r2_Jh)
     ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',fntsize);
     drawnow;
     
+    axes(ax_sub_map2);
+
+    lmcosi_sub = FindSubRelief(...
+        lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(i),rho2_Jh(i),r2_Jh(i),T);
+       
+    [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);  
+    [lon,lat] = meshgrid(lon,lat);
+    pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
+    cbar = colorbar('FontSize',fntsize_sm);
+    ylabel(cbar,'Crustal thickness [km]','FontSize',fntsize_sm);
+    
+
     title(['$r_{2} = ' num2str(r2_Jh(i)/1000,'%6.2f') ' [km]$; '...
         '$\rho_{2} = ' num2str(rho2_Jh(i),'%6.2f') ' [kg/m^{3}]$; '...
         '$\rho_{1} = ' num2str(rho1_Jh(i),'%6.2f') ' [kg/m^{3}]$'],...
@@ -289,7 +310,6 @@ cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
 
 [n_homo,Z]           = SphericalHarmonicAdmittance(lmcosi_g,lmcosi_t,GM,Rref);
 [n_homo_noJ2,Z_noJ2] = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_t_noJ2,GM,Rref);
-
 
 %% isostatic anomaly
 
