@@ -1,4 +1,4 @@
-% ccc
+ccc
 
 %% plotting settings
 fntsize = 12;
@@ -22,7 +22,6 @@ r1    = 470000;
 T     = 9.073859324514187; % DLR
 Npts  = 50;
 
-rhomean=2150;
 M=GM/G;
 
 MaxDegreeTopo = 100;
@@ -102,7 +101,9 @@ rho2_Jh = CJhyd(2,2:end);
 
 rho1_Jh = griddata(r2i,rho2i,rho1i,r2_Jh,rho2_Jh,'linear');
 M2_Jh   = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'linear');
-f2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'linear');
+fp2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'linear');
+fp1_Jh   = griddata(r2i,rho2i,f1i,r2_Jh,rho2_Jh,'linear');
+
 
 M1_Jh = M - M2_Jh;
 
@@ -162,6 +163,9 @@ c_Jh = a_Jh;
 
 %% Compute subsurface interface
 
+fp1_Jh(69)
+fp2_Jh(69)
+
 lmcosi_sub = FindSubRelief(...
     lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(69),rho2_Jh(69),r2_Jh(69),T);
 
@@ -169,10 +173,12 @@ lmcosi_sub = FindSubRelief(...
 %% Crustal thickness map
 
 [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);
+[ri1,lon,lat]     = plm2xyz(lmcosi_t,step);
+
 [lon,lat] = meshgrid(lon,lat);
 
 AGUaxes;
-pcolorm(lat,lon,(r1 - ri2_sub)/1000);
+pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
 cbar = colorbar('FontSize',20);
 ylabel(cbar,'Crustal thickness [km]','FontSize',20);
 
@@ -273,16 +279,15 @@ lmcosi_g_noJ2(4,3)=0;
 lmcosi_gt_noJ2(4,3)=0;
 lmcosi_t_noJ2(4,3)=0;
 
-
 cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
 cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
-cor_noJ2_2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_ryan);
+% cor_noJ2_2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_ryan);
 
 % Z_noJ2 = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_gt_noJ2);
 
 %% admittance
 
-[n_homo,Z]   = SphericalHarmonicAdmittance(lmcosi_g,lmcosi_t,GM,Rref);
+[n_homo,Z]           = SphericalHarmonicAdmittance(lmcosi_g,lmcosi_t,GM,Rref);
 [n_homo_noJ2,Z_noJ2] = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_t_noJ2,GM,Rref);
 
 
