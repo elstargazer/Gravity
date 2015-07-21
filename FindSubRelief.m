@@ -6,13 +6,13 @@ function lmcosi_sub_final = FindSubRelief(lmcosi_g,lmcosi_t,GM,Rref,rho1,rho2,r2
 G = 6.67384e-11;
 M = GM/G;
 
-hmaxt  = 4;      % max power of topography
+hmaxt  = 3;      % max power of topography
 nmaxg  = 2;      % max degree of gravity
 nmaxgt = nmaxg;  % max degree of gravity from shape
 nmaxt  = 10;     % max degree of shape
 res    = 1;      % resolution [deg]
 nc     = 100;      % critical degree
-rtol   = 1e-1;   % tolerance for subsurface relief [m]
+rtol   = 10;   % tolerance for subsurface relief [m]
 aref   = 481000; % reference for Bouguer anomaly
 cref   = 446000; % reference for Bouguer anomaly
 
@@ -27,8 +27,8 @@ r1 = lmcosi_t(1,3);
 
 [fh,~]=HydrostaticStateExact2l(r1,r2,T,rho1,rho2,0.1,0.1);
 
-fp1 = fh(1)
-fp2 = fh(2)
+fp1 = fh(1);
+fp2 = fh(2);
 
 J2calc = RadFlat2J2(r1,r2,fp1,fp2,rho1,rho2,Rref);
 J2obs  = -lmcosi_g(4,3);
@@ -56,19 +56,19 @@ lmcosi_ba(:,3:4) = lmcosi_ba(:,3:4) - lmcosi_gt(:,3:4);
 
 %% Computing Bouguer anomaly
 
-[xref,yref,zref] = TriEllRadVec(lat,lon,aref,aref,cref,'xyz');
-
-[ax_ba,ay_ba,az_ba]=GravityAcceleration(...
-    GM,Rref,lmcosi_ba,xref,yref,zref);
-
-[g_up_ba,~,~]=GravityComponents(...
-    ax_ba,ay_ba,az_ba,xref,yref,zref,aref,cref);
-    
-AGUaxes;
-title('Initial Bouguer Anomaly','FontSize',20);
-pcolorm(lat*180/pi,lon*180/pi,(g_up_ba)*1e5);
-cbar = colorbar('FontSize',20);
-ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
+% [xref,yref,zref] = TriEllRadVec(lat,lon,aref,aref,cref,'xyz');
+% 
+% [ax_ba,ay_ba,az_ba]=GravityAcceleration(...
+%     GM,Rref,lmcosi_ba,xref,yref,zref);
+% 
+% [g_up_ba,~,~]=GravityComponents(...
+%     ax_ba,ay_ba,az_ba,xref,yref,zref,aref,cref);
+%     
+% AGUaxes;
+% title('Initial Bouguer Anomaly','FontSize',20);
+% pcolorm(lat*180/pi,lon*180/pi,(g_up_ba)*1e5);
+% cbar = colorbar('FontSize',20);
+% ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
 
 
 %% Computing subrelief
@@ -128,35 +128,33 @@ end
 % lmcosi_sub(:,3:4) = lmcosi_t2_ell(:,3:4) + lmcosi_sub(:,3:4);
 
 lmcosi_sub_final(:,3:4) = lmcosi_sub_final(:,3:4) + lmcosi_t2_ell(:,3:4);
-
-
 ri2_final = plm2xyz(lmcosi_sub_final,res);
 
-figure;
-pcolor(ri2_final); shading interp;
-colorbar;
+% figure;
+% pcolor(ri2_final); shading interp;
+% colorbar;
 
 
 %% Recompute the Bouguer anomaly
 
-lmcosi_gt2_final = Topo2Grav(ri2_final,Rref,nmaxt,nmaxgt,hmaxt);
-lmcosi_gt_final  = lmcosi_gt;
-lmcosi_gt_final(:,3:4) = (M1*lmcosi_gt1(:,3:4)+M2*lmcosi_gt2_final(:,3:4))/M;
-
-lmcosi_ba_final        = lmcosi_g;
-lmcosi_ba_final(:,3:4) = lmcosi_ba_final(:,3:4) - lmcosi_gt_final(:,3:4);
-
-[ax_ba,ay_ba,az_ba]=GravityAcceleration(...
-    GM,Rref,lmcosi_ba_final,xref,yref,zref);
-
-[g_up_ba,~,~]=GravityComponents(...
-    ax_ba,ay_ba,az_ba,xref,yref,zref,aref,cref);
-    
-AGUaxes;
-title('Final Bouguer Anomaly','FontSize',20);
-pcolorm(lat*180/pi,lon*180/pi,(g_up_ba)*1e5);
-cbar = colorbar('FontSize',20);
-ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
+% lmcosi_gt2_final = Topo2Grav(ri2_final,Rref,nmaxt,nmaxgt,hmaxt);
+% lmcosi_gt_final  = lmcosi_gt;
+% lmcosi_gt_final(:,3:4) = (M1*lmcosi_gt1(:,3:4)+M2*lmcosi_gt2_final(:,3:4))/M;
+% 
+% lmcosi_ba_final        = lmcosi_g;
+% lmcosi_ba_final(:,3:4) = lmcosi_ba_final(:,3:4) - lmcosi_gt_final(:,3:4);
+% 
+% [ax_ba,ay_ba,az_ba]=GravityAcceleration(...
+%     GM,Rref,lmcosi_ba_final,xref,yref,zref);
+% 
+% [g_up_ba,~,~]=GravityComponents(...
+%     ax_ba,ay_ba,az_ba,xref,yref,zref,aref,cref);
+%     
+% AGUaxes;
+% title('Final Bouguer Anomaly','FontSize',20);
+% pcolorm(lat*180/pi,lon*180/pi,(g_up_ba)*1e5);
+% cbar = colorbar('FontSize',20);
+% ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
 
 
 
