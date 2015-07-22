@@ -5,6 +5,8 @@ fntsize = 12;
 fntsize_sm = 10;
 im_size=[0 0 13 9];
 
+fig_folder='~/Dawn/Figures/';
+
 %% input parameters
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150716_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150716_256.bds';
@@ -99,18 +101,18 @@ close(fig_todel);
 r2_Jh   = CJhyd(1,2:end);
 rho2_Jh = CJhyd(2,2:end);
 
-rho1_Jh = griddata(r2i,rho2i,rho1i,r2_Jh,rho2_Jh,'linear');
-M2_Jh   = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'linear');
+rho1_Jh  = griddata(r2i,rho2i,rho1i,r2_Jh,rho2_Jh,'linear');
+M2_Jh    = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'linear');
 fp2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'linear');
 fp1_Jh   = griddata(r2i,rho2i,f1i,r2_Jh,rho2_Jh,'linear');
 
 M1_Jh = M - M2_Jh;
 
-fig1=figure;
+fig_shell=figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
 set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
-hold on;grid on;
+hold on;grid on; box on;
 
 plot(rho1_Jh,(r1-r2_Jh)/1000,'-b','LineWidth',3);
 
@@ -120,6 +122,8 @@ ylabel('Shell thickness [km]','FontSize',fntsize);
 gi = ginput(1);
 ind = find(abs(rho1_Jh - gi(1)) == min(abs(rho1_Jh - gi(1))));
 plot(rho1_Jh(ind),(r1-r2_Jh(ind))/1000,'or','MarkerSize',10);
+
+PrintWhite(fig_shell,[fig_folder 'Fig_shell_pick.jpg']);
 
 % we have r1, r2_Jh, rho1_Jh, rho2_Jh = family of solutions for J2
 %% plot gravity
@@ -140,7 +144,10 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,g_up_fa*1e5,'FA.dat');
 
 AGUaxes;
 pcolorm(lat_grid*180/pi,lon_grid*180/pi,g_up_fa*1e5); shading interp;
-colorbar('FontSize',fntsize);
+cbar = colorbar('FontSize',fntsize);
+ylabel(cbar,'Free-air anomaly [mGal]','FontSize',20);
+
+PrintWhite([fig_folder 'Fig_FA.jpg']);
 
 %% compute gravity from shape
 
@@ -184,7 +191,34 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gba_up*1e5,'BA.dat');
 
 AGUaxes;
 pcolorm(lat_grid*180/pi,lon_grid*180/pi,gba_up*1e5); shading interp;
+cbar = colorbar('FontSize',fntsize);
+ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
+
+PrintWhite([fig_folder 'Fig_BA.jpg']);
+
+%% Compute isostatic anomaly
+
+D_comp = r1 - r2_Jh(ind);
+
+lmcosi_gtisos = Topo2IsosGrav(...
+    flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),rhomean,MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
+
+MaxDegreeIsos=min([lmcosi_g(end,1) lmcosi_gtisos(end,1)]);
+lmcosi_isos = lmcosi_g;
+lmcosi_isos(:,3:4) = lmcosi_isos(:,3:4) - lmcosi_gtisos(:,3:4);
+
+[ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_isos,xref,yref,zref);
+[gisos_up,~,~]=GravityComponents(...
+    ax,ay,az,xref,yref,zref,aref,cref);
+
+WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gisos_up*1e5,'ISOS.dat');
+
+AGUaxes;
+pcolorm(lat_grid*180/pi,lon_grid*180/pi,gisos_up*1e5); shading interp;
 colorbar('FontSize',fntsize);
+ylabel(cbar,'Isostatic anomaly [mGal]','FontSize',20);
+
+PrintWhite([fig_folder 'Fig_ISOS.jpg']);
 
 %% Compute subsurface interface
 
@@ -201,10 +235,17 @@ lmcosi_sub = FindSubRelief(...
 
 [lon,lat] = meshgrid(lon,lat);
 
+ct = (ri1 - ri2_sub)/1000;
+
 AGUaxes;
-pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
+pcolorm(lat,lon,ct);
 cbar = colorbar('FontSize',20);
 ylabel(cbar,'Crustal thickness [km]','FontSize',20);
+
+PrintWhite([fig_folder 'Fig_CT.jpg']);
+
+WriteXYZ(lon,lat,ct,'CT.dat');
+
 
 %% Anomaly animation
 
