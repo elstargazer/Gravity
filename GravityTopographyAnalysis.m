@@ -90,7 +90,6 @@ M1 = 4/3*pi.*(r1.^3).*(rho1i);
 
 J2hi=RadFlat2J2(r1,r2i,f1i,f2i,rho1i,rho2i,Rref);
 
-
 fig_todel = figure;
 CJhyd = contour(r2i,rho2i,J2hi,[J2obs J2obs]);
 % CJhyd  = contourc(r2i(:,1),rho2i(1,:),J2hi,[J2obs J2obs]);
@@ -155,7 +154,33 @@ PrintWhite([fig_folder 'Fig_FA.jpg']);
 %     MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
 
 lmcosi_gt1=Topo2Grav(flipud(r_grid'),Rref,...
-    MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
+    MaxDegreeTopo,20,4);
+
+% lmcosi_gt1 = lmcosi_gtr;
+% lmcosi_gt1(7:end,:) = [];
+% lmcosi_gt1(1,3) = 1;
+
+% Admittance
+
+fig_Z=figure;
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+hold on;grid on; box on;
+
+[n,Z] = SphericalHarmonicAdmittance(lmcosi_gt1,lmcosi_t,GM,Rref);
+R0    = lmcosi_t(1,3);
+
+Z_theo  = 3./(2*(n)+1).*((R0/Rref).^n).*(n+1)*GM/(Rref^2)*1e5/R0*1000;
+
+plot(n,Z,'-k','LineWidth',3,'MarkerSize',5);
+plot(n,Z_theo,'-r','LineWidth',3,'MarkerSize',5);
+
+legend({'Homogeneous','Linear'},'FontSize',fntsize_sm);
+xlabel('Degree','FontSize',fntsize);
+ylabel('Admittance [mGal/km]','FontSize',fntsize);
+
+PrintWhite(fig_Z,[fig_folder 'Fig_Z.jpg']);
 
 %% model gravity
 % compute gravity from shape
@@ -166,13 +191,12 @@ lmcosi_gt1=Topo2Grav(flipud(r_grid'),Rref,...
 
 WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,g_up_gt1*1e5,'GT.dat');
 
-% compute gravity from core
-
 a_Jh = zeros(size(r2_Jh));
 c_Jh = a_Jh;
 
 %% compute Bouguer anomaly
 
+% compute gravity from core
 [a_Jh,~,c_Jh]=fr2abc(r2_Jh(ind),fp2_Jh(ind),0);
 lmcosi_gt2=SHRotationalEllipsoid(a_Jh,c_Jh,MaxDegreeGrav,Rref);
 w = [M1_Jh(ind)/M M2_Jh(ind)/M];
@@ -222,9 +246,6 @@ PrintWhite([fig_folder 'Fig_ISOS.jpg']);
 
 %% Compute subsurface interface
 
-fp1_Jh(ind)
-fp2_Jh(ind)
-
 lmcosi_sub = FindSubRelief(...
     lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(ind),rho2_Jh(ind),r2_Jh(ind),T);
 
@@ -232,20 +253,15 @@ lmcosi_sub = FindSubRelief(...
 
 [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);
 [ri1,lon,lat]     = plm2xyz(lmcosi_t,step);
-
 [lon,lat] = meshgrid(lon,lat);
-
 ct = (ri1 - ri2_sub)/1000;
 
 AGUaxes;
 pcolorm(lat,lon,ct);
 cbar = colorbar('FontSize',20);
 ylabel(cbar,'Crustal thickness [km]','FontSize',20);
-
 PrintWhite([fig_folder 'Fig_CT.jpg']);
-
 WriteXYZ(lon,lat,ct,'CT.dat');
-
 
 %% Anomaly animation
 
