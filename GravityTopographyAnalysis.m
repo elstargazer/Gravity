@@ -154,7 +154,7 @@ PrintWhite([fig_folder 'Fig_FA.jpg']);
 %     MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
 
 lmcosi_gt1=Topo2Grav(flipud(r_grid'),Rref,...
-    MaxDegreeTopo,20,4);
+    MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
 
 % lmcosi_gt1 = lmcosi_gtr;
 % lmcosi_gt1(7:end,:) = [];
