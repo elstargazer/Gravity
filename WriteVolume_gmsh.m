@@ -1,9 +1,9 @@
 function WriteVolume_gmsh(in,id,sfs_loops)
 
-fprintf('Volume (%d) = {',id);
+fprintf(in,'Volume (%d) = {',id);
 
-for i=1:numel(pl)   
-    fprintf('%d',sfs_loops(i));      
+for i=1:numel(sfs_loops)-1   
+    fprintf(in,'%d, ',sfs_loops(i));  
 end
 
-fprintf(in,'};\n');
+fprintf(in,'%d};\n',sfs_loops(end));  

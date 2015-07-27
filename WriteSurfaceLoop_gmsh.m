@@ -1,9 +1,9 @@
 function WriteSurfaceLoop_gmsh(in,id,sfs)
 
-fprintf(in,'Surface Loop(%d)',id);
+fprintf(in,'Surface Loop(%d) = {',id);
 
-for i=1:numel(lns)    
+for i=1:numel(sfs)-1    
    fprintf(in,'%d, ',sfs(i));
 end
 
-fprintf(in,'};\n');
+fprintf(in,'%d};\n',sfs(end));

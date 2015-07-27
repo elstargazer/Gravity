@@ -1,9 +1,9 @@
 function WriteSurface_gmsh(in,id,pl)
 
-fprintf('Plane Surface(%d) = {',id);
+fprintf(in,'Plane Surface(%d) = {',id);
 
-for i=1:numel(pl)   
-    fprintf('%d',pl(i));      
+for i=1:numel(pl)-1 
+    fprintf(in,'%d, ',pl(i));         
 end
+fprintf(in,'%d};\n',pl(end));      
 
-fprintf(in,'};\n');
