@@ -88,6 +88,23 @@ x_shell_6 = linspaceNDim(xc_bnry_6, x_surf_6, npts_shell);
 y_shell_6 = linspaceNDim(yc_bnry_6, y_surf_6, npts_shell);
 z_shell_6 = linspaceNDim(zc_bnry_6, z_surf_6, npts_shell);
 
+
+% plot points
+
+ccj = jet(6);
+
+figure; hold on;
+axis equal;
+
+plot3(x_shell_1(:),y_shell_1(:),z_shell_1(:),'.','Color',ccj(1,:));
+plot3(x_shell_2(:),y_shell_2(:),z_shell_2(:),'.','Color',ccj(2,:));
+plot3(x_shell_3(:),y_shell_3(:),z_shell_3(:),'.','Color',ccj(3,:));
+plot3(x_shell_4(:),y_shell_4(:),z_shell_4(:),'.','Color',ccj(4,:));
+plot3(x_shell_5(:),y_shell_5(:),z_shell_5(:),'.','Color',ccj(5,:));
+plot3(x_shell_6(:),y_shell_6(:),z_shell_6(:),'.','Color',ccj(6,:));
+
+plot3(xc(:),yc(:),zc(:),'.','Color','k');
+
 %% Write in file
 in = fopen(filename_mesh,'w');
 
