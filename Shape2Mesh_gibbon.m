@@ -10,7 +10,7 @@ cPar.numElementsMantel=nmantle;
 cPar.numElementsCore=ncore; 
 cPar.makeHollow=0;
 
-%Creating sphere
+%Creating mesh
 tic
 % [meshStruct]=hexMeshSphere(cPar);
 [meshStruct]=hexMeshShape(cPar,shape_file);
@@ -29,11 +29,12 @@ Write_ucd(meshStruct,mesh_file)
 %% Plotting mesh 
 
 % Plot settings
-figColor='w'; figColorDef='white';
-fontSize=15;
-faceAlpha1=1;
-edgeColor=0.25*ones(1,3);
-edgeWidth=2;
+figColor     = 'w'; 
+figColorDef  = 'white';
+fontSize     = 15;
+faceAlpha1   = 1;
+edgeColor    = 0.25*ones(1,3);
+edgeWidth    = 2;
 
 % plotting
 
