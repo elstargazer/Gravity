@@ -1,6 +1,7 @@
 function Shape2Mesh_cubesphere(filename_shape,filename_mesh,nrow)
 
-
+% Using cube-inside-spherical shell approach.
+% Program not finished
 
 %% Parameters 
 
