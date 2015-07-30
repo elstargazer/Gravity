@@ -1,4 +1,4 @@
-% ccc
+ccc
 
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150716_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150716_256.bds';
@@ -17,6 +17,22 @@ n_sphe  = 30;
 
 RandomShape2Mesh_gibbon(r_sphe, r_core, n_core, n_sphe, ...
     filename_mesh)
+
+L = 60;
+filename = '../CeresFE/FE/outer_points.txt';
+[sdl,l] = file2spec(filename,L);
+
+% figure; hold on;
+% set(gca,'XScale','log');
+% set(gca,'YScale','log');
+
+plot(l,sdl,'r-');
+
+xlabel('Degree','FontSize',20);
+ylabel('Power','FontSize',20);
+
+
+
 
 
 %% Generate Jacobi ellipsoid
