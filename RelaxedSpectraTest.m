@@ -5,6 +5,7 @@ fntsize = 12;
 fntsize_sm = 10;
 im_size=[0 0 13 9];
 
+fig_folder='~/Dawn/Figures/';
 %% reading data
 % filename_quad = {  '../CeresFE/FE/outer_vertices_0.txt',...
 %     '../CeresFE/FE/outer_vertices_1.txt',...
@@ -14,21 +15,22 @@ folder_path = '../CeresFE/FE/Output/';
  
 filename_quad = getAllFiles(folder_path);
 
-L = 45;
+L = 50;
 
 fig_spec=figure; 
 set(gcf, 'Units','centimeters', 'Position',im_size)
 set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
 hold on;grid on; box on;
+set(gca,'Interpreter','latex');
 set(gca,'XScale','log');
 set(gca,'YScale','log');
 
-xlabel('Degree','FontSize',fntsize);
-ylabel('Power [km^2]','FontSize',fntsize);
+xlabel('Degree','FontSize',fntsize,'interpreter','latex');
+ylabel('Power [$\textrm{km}^{2}$]','FontSize',fntsize,'interpreter','latex');
 
-ylim([1e2 1e8]);
-xlim([1 L]);
+ylim([1e0 1e8]);
+xlim([1 L+10]);
 
 
 ccj = cool(numel(filename_quad));
@@ -57,6 +59,8 @@ for i = 1:numel(filename_quad)
     
     drawnow;
 end
+
+PrintWhite(fig_spec,[fig_folder 'Fig_relaxed_spectrum.jpg']);
 
 
 
