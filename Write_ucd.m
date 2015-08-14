@@ -1,14 +1,7 @@
-function Write_ucd(meshStruct,filename_mesh)
+function Write_ucd(meshStruct,filename_mesh,cell_type)
 
-cell_mat   = 0;
-cell_type  = 'hex';
-
-E=meshStruct.E; %The elements 
-V=meshStruct.V; %The vertices
-Fb=meshStruct.Fb; %The boundary faces
-
-nnodes = size(V,1);
-nelems = size(E,1);
+nnodes = size(meshStruct.V,1);
+nelems = size(meshStruct.E,1);
 
 in = fopen(filename_mesh,'w');
 
@@ -17,16 +10,23 @@ fprintf(in,'%d %d %d %d %d\n',nnodes,nelems,0,0,0);
 % locations
 n = 1:nnodes;
 fprintf(in,'%d %13.6E %13.6E %13.6E\n',...
-    [n' V(:,1) V(:,2) V(:,3)]');
+    [n' meshStruct.V(:,1) meshStruct.V(:,2) meshStruct.V(:,3)]');
 
 cell_num = 1;
 
-for i=1:nelems   
-    fprintf(in,'%d %d %s %d %d %d %d %d %d %d %d\n',...
-        cell_num, cell_mat, cell_type,E(i,:));   
+switch cell_type
+    case 'hex'
+        ind_str = '%d %d %d %d %d %d %d %d\n';     
+    case 'quad'
+        ind_str = '%d %d %d %d\n';              
 end
 
-
+for i=1:nelems   
+    fprintf(in,['%d %d %s ' ind_str],...
+        cell_num, meshStruct.cell_mat(i),...
+        cell_type,meshStruct.E(i,:));
+    cell_num = cell_num + 1;
+end
 
 fclose(in);
 
