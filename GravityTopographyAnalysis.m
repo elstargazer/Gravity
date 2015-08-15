@@ -68,6 +68,18 @@ lmcosi_gt1_ell = SHRotationalEllipsoid(481000,446000,2,Rref);
 AGUaxes;
 pcolorm(lat_grid*180/pi,lon_grid*180/pi,H);
 
+%% Plot topography with respect to equipotential surface
+
+H_eq = Height2Equipotential(full_filename,lat_grid,lon_grid,GM,Rref,lmcosi_g,T);
+
+AGUaxes;
+pcolorm(lat_grid*180/pi,lon_grid*180/pi,H_eq/1000);
+cbar = colorbar('FontSize',fntsize);
+ylabel(cbar,'Height above equipotential [km]','FontSize',20);
+caxis([-6 6]);
+
+WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,H_eq,'H_eq.dat');
+
 %% hydrostatic gravity
 
 % Grid of core radii and densities
@@ -265,92 +277,92 @@ WriteXYZ(lon,lat,ct,'CT.dat');
 
 %% Anomaly animation
 
-fig_anim = figure('Position',[1 1 1000 1000]);
-hold on;
-
-fig_sub_2l  = subplot('Position',[0.5 0.6 0.45 0.35]);
-set(gca, 'FontSize',fntsize);
-hold on;grid on; box on;
-
-pl_shell     = plot(rho1_Jh,(r1-r2_Jh)/1000,'-k','LineWidth',2);
-pl_shell_pnt = plot(rho1_Jh(1),r1-r2_Jh(1)/1000,'or','MarkerSize',10);
-
-xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
-ylabel('Shell thickness [km]','FontSize',fntsize);
-
-fig_sub_map = subplot('Position',[0.05 0.05 0.9 0.45]);
-
-ax_sub_map=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
-    'FontSize',24,'Grid','on','MLabelParallel',...
-    'equator','AngleUnits','degrees','LabelUnits','degrees','ParallelLabel'...
-    , 'on','MeridianLabel', 'on','GLineStyle','w--','GlineWidth',0.5,...
-    'FontColor',[0 0 0]...
-    ,'FontSize',24,'GAltitude',Inf,'Geoid',[1 0],...
-    'FEdgeColor',[0 0 0],'Frame','on');
-
-axis off;
-
-fig_sub_2l  = subplot('Position',[0.05 0.6 0.4 0.35]);
-set(gca, 'FontSize',fntsize);
-
-ax_sub_map2=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
-    'FontSize',24,'Grid','on','MLabelParallel',...
-    'equator','AngleUnits','degrees','LabelUnits','degrees','ParallelLabel'...
-    , 'on','MeridianLabel', 'on','GLineStyle','w--','GlineWidth',0.5,...
-    'FontColor',[0 0 0]...
-    ,'FontSize',fntsize_sm,'GAltitude',Inf,'Geoid',[1 0],...
-    'FEdgeColor',[0 0 0],'Frame','on');
-
-writerObj = VideoWriter('BA_Ceres2.avi');
-open(writerObj);
-
-for i=1:numel(r2_Jh)  
-    
-    [a_Jh(i),~,c_Jh(i)]=fr2abc(r2_Jh(i),fp2_Jh(i),0);
-    lmcosi_gt2=SHRotationalEllipsoid(a_Jh(i),c_Jh(i),MaxDegreeGrav,Rref);
-    w = [M1_Jh(i)/M M2_Jh(i)/M];
-    
-    lmcosi_gt = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2});
-    
-    [ax_gt,ay_gt,az_gt]=GravityAcceleration(...
-        GM,Rref,lmcosi_gt,xref,yref,zref);
-    
-    [g_up_gt,g_east_gt,g_north_gt]=GravityComponents(...
-        ax_gt,ay_gt,az_gt,xref,yref,zref,aref,cref);
-    
-%     WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,(g_up - g_up_gt)*1e5,'BA.dat');
-    
-    axes(ax_sub_map);
-    pcolorm(lat_grid*180/pi,lon_grid*180/pi,(g_up - g_up_gt)*1e5); 
-    caxis([-350 350]);
-    shading interp;
-    cbar = colorbar('FontSize',fntsize);
-    ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',fntsize);
-    drawnow;
-    
-    axes(ax_sub_map2);
-
-    lmcosi_sub = FindSubRelief(...
-        lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(i),rho2_Jh(i),r2_Jh(i),T);
-       
-    [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);  
-    [lon,lat] = meshgrid(lon,lat);
-    pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
-    cbar = colorbar('FontSize',fntsize_sm);
-    ylabel(cbar,'Crustal thickness [km]','FontSize',fntsize_sm);
-    
-    title(['$r_{2} = ' num2str(r2_Jh(i)/1000,'%6.2f') ' [km]$; '...
-        '$\rho_{2} = ' num2str(rho2_Jh(i),'%6.2f') ' [kg/m^{3}]$; '...
-        '$\rho_{1} = ' num2str(rho1_Jh(i),'%6.2f') ' [kg/m^{3}]$'],...
-        'FontSize',fntsize,'interpreter','latex');
-    
-    set(pl_shell_pnt,'XData',rho1_Jh(i),'YData',(r1-r2_Jh(i))/1000);
-    
-    frame = getframe(gcf);
-    writeVideo(writerObj,frame);
-end
-
-close(writerObj);
+% fig_anim = figure('Position',[1 1 1000 1000]);
+% hold on;
+% 
+% fig_sub_2l  = subplot('Position',[0.5 0.6 0.45 0.35]);
+% set(gca, 'FontSize',fntsize);
+% hold on;grid on; box on;
+% 
+% pl_shell     = plot(rho1_Jh,(r1-r2_Jh)/1000,'-k','LineWidth',2);
+% pl_shell_pnt = plot(rho1_Jh(1),r1-r2_Jh(1)/1000,'or','MarkerSize',10);
+% 
+% xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
+% ylabel('Shell thickness [km]','FontSize',fntsize);
+% 
+% fig_sub_map = subplot('Position',[0.05 0.05 0.9 0.45]);
+% 
+% ax_sub_map=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
+%     'FontSize',24,'Grid','on','MLabelParallel',...
+%     'equator','AngleUnits','degrees','LabelUnits','degrees','ParallelLabel'...
+%     , 'on','MeridianLabel', 'on','GLineStyle','w--','GlineWidth',0.5,...
+%     'FontColor',[0 0 0]...
+%     ,'FontSize',24,'GAltitude',Inf,'Geoid',[1 0],...
+%     'FEdgeColor',[0 0 0],'Frame','on');
+% 
+% axis off;
+% 
+% fig_sub_2l  = subplot('Position',[0.05 0.6 0.4 0.35]);
+% set(gca, 'FontSize',fntsize);
+% 
+% ax_sub_map2=axesm('mollweid','frame','on','FEdgeColor',[1 1 1],'origin',[0 0],...
+%     'FontSize',24,'Grid','on','MLabelParallel',...
+%     'equator','AngleUnits','degrees','LabelUnits','degrees','ParallelLabel'...
+%     , 'on','MeridianLabel', 'on','GLineStyle','w--','GlineWidth',0.5,...
+%     'FontColor',[0 0 0]...
+%     ,'FontSize',fntsize_sm,'GAltitude',Inf,'Geoid',[1 0],...
+%     'FEdgeColor',[0 0 0],'Frame','on');
+% 
+% writerObj = VideoWriter('BA_Ceres2.avi');
+% open(writerObj);
+% 
+% for i=1:numel(r2_Jh)  
+%     
+%     [a_Jh(i),~,c_Jh(i)]=fr2abc(r2_Jh(i),fp2_Jh(i),0);
+%     lmcosi_gt2=SHRotationalEllipsoid(a_Jh(i),c_Jh(i),MaxDegreeGrav,Rref);
+%     w = [M1_Jh(i)/M M2_Jh(i)/M];
+%     
+%     lmcosi_gt = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2});
+%     
+%     [ax_gt,ay_gt,az_gt]=GravityAcceleration(...
+%         GM,Rref,lmcosi_gt,xref,yref,zref);
+%     
+%     [g_up_gt,g_east_gt,g_north_gt]=GravityComponents(...
+%         ax_gt,ay_gt,az_gt,xref,yref,zref,aref,cref);
+%     
+% %     WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,(g_up - g_up_gt)*1e5,'BA.dat');
+%     
+%     axes(ax_sub_map);
+%     pcolorm(lat_grid*180/pi,lon_grid*180/pi,(g_up - g_up_gt)*1e5); 
+%     caxis([-350 350]);
+%     shading interp;
+%     cbar = colorbar('FontSize',fntsize);
+%     ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',fntsize);
+%     drawnow;
+%     
+%     axes(ax_sub_map2);
+% 
+%     lmcosi_sub = FindSubRelief(...
+%         lmcosi_g,lmcosi_t,GM,Rref,rho1_Jh(i),rho2_Jh(i),r2_Jh(i),T);
+%        
+%     [ri2_sub,lon,lat] = plm2xyz(lmcosi_sub,step);  
+%     [lon,lat] = meshgrid(lon,lat);
+%     pcolorm(lat,lon,(ri1 - ri2_sub)/1000);
+%     cbar = colorbar('FontSize',fntsize_sm);
+%     ylabel(cbar,'Crustal thickness [km]','FontSize',fntsize_sm);
+%     
+%     title(['$r_{2} = ' num2str(r2_Jh(i)/1000,'%6.2f') ' [km]$; '...
+%         '$\rho_{2} = ' num2str(rho2_Jh(i),'%6.2f') ' [kg/m^{3}]$; '...
+%         '$\rho_{1} = ' num2str(rho1_Jh(i),'%6.2f') ' [kg/m^{3}]$'],...
+%         'FontSize',fntsize,'interpreter','latex');
+%     
+%     set(pl_shell_pnt,'XData',rho1_Jh(i),'YData',(r1-r2_Jh(i))/1000);
+%     
+%     frame = getframe(gcf);
+%     writeVideo(writerObj,frame);
+% end
+% 
+% close(writerObj);
 
 % AGUaxes;
 % pcolorm(lat_grid,lon_grid,g_up_gt); shading interp;
@@ -359,15 +371,17 @@ close(writerObj);
 %% Correlation
 
 lmcosi_g_noJ2 = lmcosi_g;
-lmcosi_gt_noJ2 = lmcosi_gt;
+% lmcosi_gt_noJ2 = lmcosi_gt;
 lmcosi_t_noJ2 = lmcosi_t;
 
 lmcosi_g_noJ2(4,3)=0;
-lmcosi_gt_noJ2(4,3)=0;
+% lmcosi_gt_noJ2(4,3)=0;
 lmcosi_t_noJ2(4,3)=0;
 
-cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
-cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
+
+
+% cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
+% cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
 % cor_noJ2_2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_ryan);
 
 % Z_noJ2 = SphericalHarmonicAdmittance(lmcosi_g_noJ2,lmcosi_gt_noJ2);
