@@ -1,23 +1,23 @@
-function RandomShape2Mesh_gibbon(r_sph, r_core, ncore, nmantle, mesh_file)
+function RandomShape2Mesh_gibbon(r_sph, r_core, ncore, nmantle, mesh_file, L, beta, intercept)
 
 
 %% Generating a random shape
-L    = 30;
-beta = -2;
-
-[lmcosi_shape,bta,bto,sdl,el]=plm2rnd(L,beta,1,3);
+lmcosi_shape=plm2rnd(L,beta,1);
 
 lmcosi_shape(1,3) = abs(lmcosi_shape(1,3)*r_sph);
-lmcosi_shape(2:end,3:4) = lmcosi_shape(2:end,3:4)*2e4;
+lmcosi_shape(2:end,3:4) = lmcosi_shape(2:end,3:4)*sqrt(intercept);
 
-% [sdl,l] = plm2spec(lmcosi);
-% 
-% figure; hold on;
-% set(gca,'XScale','log');
-% set(gca,'YScale','log');
-% plot(l,sdl,'-r');
-% 
-[r] = plm2xyz(lmcosi_shape);
+[sdl,l] = plm2spec(lmcosi_shape);
+
+figure; hold on;
+set(gca,'XScale','log');
+set(gca,'YScale','log');
+
+plot(l,sdl,'-r');
+
+xlabel('Degree','FontSize',20);
+ylabel('Power','FontSize',20);
+
 
 %% Creating a solid hexahedral mesh  
 
@@ -43,7 +43,7 @@ meshStruct
 
 %% Write to ucd
 
-Write_ucd(meshStruct,mesh_file)
+Write_ucd(meshStruct,mesh_file,'hex');
 
 %% Plotting mesh 
 
@@ -74,7 +74,7 @@ title('Cut-view of the mesh','FontSize',fontSize);
 
 %Create cut view
 Y=V(:,2); YE=mean(Y(E),2);
-L=YE>mean(Y);
+L=YE>0;
 [Fs,~]=element2patch(E(L,:),[],'hex8');
 patch('Faces',Fs,'Vertices',V,'FaceColor','b',...
     'FaceAlpha',faceAlpha1,'lineWidth',edgeWidth/2,'edgeColor',edgeColor);
