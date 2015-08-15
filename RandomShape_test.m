@@ -1,5 +1,12 @@
 % ccc;
 
+%% plotting settings
+fntsize = 12;
+fntsize_sm = 10;
+im_size=[0 0 13 9];
+
+fig_folder='~/Dawn/Figures/';
+
 %% Initial parameters
 
 r_sph = 470000;
@@ -13,8 +20,7 @@ deformed_mesh_quad_filename = [path '/' name '_def_quad' ext];
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150716_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150716_256.bds';
 
-filename_quad = '../CeresFE/FE/outer_points.txt';
-
+filename_quad = '../CeresFE/FE/outer_vertices00.txt';
 
 %% Read init sphere mesh
 
@@ -58,14 +64,18 @@ xlabel('x'); ylabel('y'); zlabel('z');
 
 [sdl,l] = plm2spec(lmcosi_real_shape);
 
-plot_spec = figure; hold on;
-set(gca,'FontSize',20);
+fig_spec=figure;
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+hold on;grid on; box on;
 set(gca,'XScale','log');
 set(gca,'YScale','log');
-plot(l,sdl);
-box on;
-xlabel('Degree','FontSize',20);
-ylabel('Power [km^{2}]','FontSize',20);
+
+pl_real = plot(l,sdl,'-k');
+
+xlabel('Degree','FontSize',fntsize);
+ylabel('Power [km^{2}]','FontSize',fntsize);
 
 gi = ginput(2);
 
@@ -78,29 +88,16 @@ l_c   = l(cond);
 sdl_c = sdl(cond);
 
 p = polyfit(log10(l_c),log10(sdl_c),1);
-
 ipt1 = polyval(p,log10(1));
 
 %% Generate random spectrum
 
-L    = 180;
-% beta = p(1);
-% 
-% [lmcosi_shape,bta,bto,sdl,el]=plm2rnd(L,beta,1);
-% lmcosi_shape(2:end,3:4) = lmcosi_shape(2:end,3:4)*sqrt((10^ipt1));
-% lmcosi_shape(1,3) = lmcosi_real_shape(1,3);
-% 
-% lmcosi_shape(2,3:4) = 0;
-% lmcosi_shape(3,3:4) = 0;
-% 
-% [sdl_r,l_r] = plm2spec(lmcosi_shape);
+L = 180;
 
-% lmcosi_shape(2:end,3:4) = 0;
 lmcosi_shape = CreateEmptylmcosi(L);
 lmcosi_shape(1,3) = lmcosi_real_shape(1,3);
 lmcosi_shape(2,3:4) = 0;
 lmcosi_shape(3,3:4) = 0;
-
 
 for n=2:2:lmcosi_shape(end,1)  
 %     lmcosi_shape((n+1)*n/2+1,3) = ((rand<0.5)*2-1)*sqrt((2*n+1)*sdl_r(n+1));
@@ -109,9 +106,8 @@ end
 
 [sdl_r,l_r] = plm2spec(lmcosi_shape);
 
-figure(plot_spec);
-plot(l_r,sdl_r,'.g','MarkerSize',15);
-
+figure(fig_spec);
+pl_fit = plot(l_r(1:2:end),sdl_r(1:2:end),'-og','MarkerSize',2);
 
 %% Compute limb
 
@@ -123,7 +119,6 @@ r_new = r.*r_shape;
 
 figure; hold on;
 plot(x_new,z_new,'.');
-
 
 meshStruct_def.E = meshStruct.E;
 meshStruct_def.V = [x_new z_new zeros(size(x_new))];
@@ -151,13 +146,18 @@ Write_ucd(meshStruct_def,deformed_mesh_filename,cell_type)
 axis equal;
 
 %% limb spectrum
-L = 40;
+L = 30;
 
 lmcosi_limb = quad2plm(filename_quad,L);
 
 [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
-figure(plot_spec);
-plot(l_limb,sdl_limb,'.m','MarkerSize',15);
+figure(fig_spec);
+pl_relax = plot(l_limb(1:2:end),sdl_limb(1:2:end)...
+    ,'-ro','MarkerSize',2);
+legend([pl_real pl_fit pl_relax],...
+    {'Real Ceres','Fit','Relaxed'},'FontSize',fntsize_sm);
+
+PrintWhite(fig_spec,[fig_folder 'Fig_RelaxedCeresSpectrum.jpg']);
 
 [r_limb_sh, lon_limb_sh, lat_limb_sh] = ...
     plm2xyz(lmcosi_limb);
@@ -170,9 +170,4 @@ figure; hold on;
 surf(x_limb_sh,y_limb_sh,z_limb_sh,r_limb_sh); shading interp
 axis equal
 xlabel('x'); ylabel('y'); zlabel('z'); 
-
-
-
-
-
 
