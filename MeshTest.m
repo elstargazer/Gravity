@@ -41,9 +41,9 @@ ylabel('Power','FontSize',20);
 r_sphe  = 470000;
 r_core  = 300000;
 r_cube  = 100000;
-n_cube  = 10;
-n_core  = 10;
-n_sphe  = 10;
+n_cube  = 30;
+n_core  = 30;
+n_sphe  = 30;
 
 L          = 150;
 beta       = p(1);
@@ -56,47 +56,44 @@ RandomShape2Mesh_gibbon(r_sphe, r_cube, n_cube, n_sphe, ...
     filename_mesh,L, beta, intercept)
 
 %% Generate two-layer random mesh
-% 
-% % generate outer surface
-% L    = 10;
-% beta = -2;
-% 
-% lmcosi1=plm2rnd(L,beta,1,3);
-% 
-% lmcosi1(1,3) = abs(lmcosi1(1,3)*r_sphe);
-% lmcosi1(2:end,3:4) = lmcosi1(2:end,3:4)*2e4;
-% 
-% % generate inner surface 
-% L    = 10;
-% beta = -3;
-% 
-% lmcosi2=plm2rnd(L,beta,1,3);
-% 
-% lmcosi2(1,3) = abs(lmcosi2(1,3)*r_core);
-% lmcosi2(2:end,3:4) = lmcosi2(2:end,3:4)*0.5e4;
-% 
-% 
-% figure; hold on;
-% axis equal;
-% alpha(0.5);
-% 
-% [r1,lon,lat] = plm2xyz(lmcosi1);
-% [lon,lat] = meshgrid(lon,lat);
-% [x1,y1,z1] = sph2cart(lon/180*pi,lat/180*pi,r1);
-% 
-% surf(x1,y1,z1);
-% 
-% 
-% [r2,lon,lat] = plm2xyz(lmcosi2);
-% [lon,lat]=meshgrid(lon,lat);
-% [x2,y2,z2] = sph2cart(lon/180*pi,lat/180*pi,r2);
-% 
-% surf(x2,y2,z2);
-% 
-% 
-% alpha(0.5);
-% 
-% TwoLayer2Mesh_gibbon(lmcosi1, lmcosi2, n_sphe, n_core, n_cube, r_cube, filename_mesh);
+
+% generate outer surface
+L         = 40;
+beta      = -3;
+intercept = 1e8;
+
+lmcosi1=plm2rnd(L,beta,1);
+
+lmcosi1(1,3) = abs(lmcosi1(1,3)*r_sphe);
+lmcosi1(2:end,3:4) = lmcosi1(2:end,3:4)*sqrt(intercept);
+
+% generate inner surface 
+L         = 40;
+beta      = -2;
+intercept = 1e6;
+
+lmcosi2=plm2rnd(L,beta,1);
+
+lmcosi2(1,3) = abs(lmcosi2(1,3)*r_core);
+lmcosi2(2:end,3:4) = lmcosi2(2:end,3:4)*sqrt(intercept);
+
+figure; hold on;
+axis equal;
+alpha(0.5);
+
+[r1,lon,lat] = plm2xyz(lmcosi1);
+[lon,lat] = meshgrid(lon,lat);
+[x1,y1,z1] = sph2cart(lon/180*pi,lat/180*pi,r1);
+surf(x1,y1,z1);
+
+[r2,lon,lat] = plm2xyz(lmcosi2);
+[lon,lat]=meshgrid(lon,lat);
+[x2,y2,z2] = sph2cart(lon/180*pi,lat/180*pi,r2);
+
+surf(x2,y2,z2);
+alpha(0.5);
+
+TwoLayer2Mesh_gibbon(lmcosi1, lmcosi2, n_sphe, n_core, n_cube, r_cube, filename_mesh);
 
 %% Read outer surface and compute power specturm
 
