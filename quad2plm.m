@@ -1,5 +1,6 @@
 function lmcosi_limb = quad2plm(filename,L)
 
+lat_step = .1;
 data = load(filename);
 
 x_limb = data(:,1);
@@ -10,23 +11,19 @@ cond_bdry = (abs(x_limb) < eps | abs(z_limb < eps));
 
 x_limb(cond_bdry) = [];
 z_limb(cond_bdry) = [];
- 
-% figure; hold on;
-% plot(x_limb,z_limb,'.');
 
-x_limb = [x_limb; -x_limb; -x_limb;  x_limb];
-z_limb = [z_limb;  z_limb; -z_limb; -z_limb];
+[~,lat,r] = cart2sph(x_limb,0,z_limb);
 
-[~,lat,r_limb] = cart2sph(x_limb,0,z_limb);
+lati=(0:lat_step:90);
+ri = interp1(lat*180/pi,r,lati,'PCHIP');
 
-% lat_interp = (-90:1:90)/180*pi;
-% r_limb_interp = interp1(lat,r_limb,lat_interp);
+% lati = [-lati lati];
+ri   = [fliplr(ri) ri];
 
-lon = linspace(-pi,pi,2*numel(x_limb));
-[lon,lat] = meshgrid(lon,lat);
-r_limb = repmat(r_limb,[1 2*numel(x_limb)]);
+nlats = numel(ri);
+ri = repmat(ri,[2*nlats 1]);
 
-lmcosi_limb = xyz2plm(r_limb(:),L,'irr',lat(:)*180/pi,lon(:)*180/pi);
+lmcosi_limb = xyz2plm(ri',L);
 
 % [r_limb_sh, lon_limb_sh, lat_limb_sh] = ...
 %     plm2xyz(lmcosi_limb);
@@ -34,7 +31,7 @@ lmcosi_limb = xyz2plm(r_limb(:),L,'irr',lat(:)*180/pi,lon(:)*180/pi);
 % [lon_limb_sh,lat_limb_sh] = meshgrid(lon_limb_sh,lat_limb_sh);
 % [x_limb_sh,y_limb_sh,z_limb_sh] = ...
 %     sph2cart(lon_limb_sh/180*pi,lat_limb_sh/180*pi,r_limb_sh);
-% 
+
 % figure; hold on;
 % surf(x_limb_sh,y_limb_sh,z_limb_sh,r_limb_sh); shading interp
 % axis equal
