@@ -14,18 +14,12 @@ lmcosi_ceres(4,3) = 0;
 [sdl_ceres,l_ceres] = plm2spec(lmcosi_ceres);
 
 %% reading data
-% filename_quad = {  '../CeresFE/FE/outer_vertices_0.txt',...
-%     '../CeresFE/FE/outer_vertices_1.txt',...
-%      '../CeresFE/FE/outer_vertices_2.txt'};
 
-folder_path = '~/Dawn/FE/output/';
+folder_path = '~/Dawn/FE/output/output_7';
 
 L = 60;
 
-% t = [0:1]*1e3;
-% t = [0:8 10:19]*1e3;
-
-filename_quad = getAllFiles(folder_path);
+filename_quad = getAllFiles(folder_path,'_surface');
 
 Ncolors = 128;
 ccj = cool(Ncolors);
@@ -90,7 +84,6 @@ for i = 2:numel(filename_quad)
     d(3:2:end)
     
     tau(:,i-1) = t(i)./(log(sdl_limb_0) - log(sdl_limb(:,i-1)));
-    
     figure(fig_spec);
     
     color_ind = fix((t(i)-min_t)/(max_t-min_t)*(Ncolors-1))+1;
