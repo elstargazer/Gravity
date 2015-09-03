@@ -4,31 +4,25 @@ ccc;
 fntsize = 12;
 fntsize_sm = 10;
 im_size=[0 0 13 9];
-
 fig_folder='~/Dawn/Figures/';
 
-%% Load Ceres shape
+%% Input data
+folder_path = '~/Dawn/FE/output/output_40km';
+L = 60; % max SH degree
 
+%% Load Ceres shape
 load CeresShapeSPCSurvey.mat;
 lmcosi_ceres(4,3) = 0;
 [sdl_ceres,l_ceres] = plm2spec(lmcosi_ceres);
 
-%% reading data
+%% Reading data
 
-folder_path = '~/Dawn/FE/output/output_7';
-
-L = 60;
-
+phys_times_data = load([folder_path '/physical_times.txt']);
+t = phys_times_data(:,2);
 filename_quad = getAllFiles(folder_path,'_surface');
 
 Ncolors = 128;
 ccj = cool(Ncolors);
-
-for i=1:numel(filename_quad)
-    [~,time_str,~]=fileparts(filename_quad{i});
-    time_str(5:6)
-    t(i) = str2double(time_str(5:6));
-end
 
 min_t = min(t);
 max_t = max(t);
@@ -76,13 +70,10 @@ plot_fit = plot(l_limb_0(1:2:end),sdl_limb_0(1:2:end),...
 for i = 2:numel(filename_quad)
     
     [~,time_str,~]=fileparts(filename_quad{i});
-    t(i) = str2double(time_str(5:6));
     lmcosi_limb = quad2plm(filename_quad{i},L);
     [sdl_limb(:,i-1),l_limb] = plm2spec(lmcosi_limb);
     
-    d = (log10(sdl_limb_0) - log10(sdl_limb(:,i-1)));
-    d(3:2:end)
-    
+    d = (log10(sdl_limb_0) - log10(sdl_limb(:,i-1)));  
     tau(:,i-1) = t(i)./(log(sdl_limb_0) - log(sdl_limb(:,i-1)));
     figure(fig_spec);
     
