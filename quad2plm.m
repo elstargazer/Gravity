@@ -18,7 +18,7 @@ lati=(0:lat_step:90);
 ri = interp1(lat*180/pi,r,lati,'PCHIP');
 
 % lati = [-lati lati];
-ri   = [fliplr(ri) ri];
+ri   = [fliplr(ri) ri(2:end)];
 
 nlats = numel(ri);
 ri = repmat(ri,[2*nlats 1]);
