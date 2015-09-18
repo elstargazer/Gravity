@@ -16,7 +16,11 @@ for i=1:MaxDegree
    a1=(i)*(i+1)/2+1;
    a2=(i+1)*(i+2)/2;
    
-   lambda=2*pi/(i+1);
+   if lmcosi(a1,1) ~= lmcosi(a2,1)
+       error('Wrong indeces');
+   end
+   
+   lambda=2*pi/lmcosi(a1,1);
    lambda_linear=lambda*Rref;
    k(i)=1/lambda_linear;   
    
