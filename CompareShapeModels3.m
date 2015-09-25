@@ -3,6 +3,14 @@ ccc
 %
 G = 6.67408e-11;
 GM = 62.6315e9;
+Rref=476000;
+
+aref = 482000;
+cref = 446000;
+
+MaxDegreeTopo=400;
+MaxDegreeGrav=40;
+MaxTopoPower=10;
 %
 fntsize = 12;
 fntsize_sm = 10;
@@ -59,7 +67,6 @@ r_grid_vec_spg = [x_grid_spg(:) y_grid_spg(:) z_grid_spg(:)];
 
 [lon_grid,lat_grid,r_grid]=cart2sph(x_grid_spc,y_grid_spc,z_grid_spc);
 [lon_rand,lat_rand,r_rand]=cart2sph(x_rand_spc,y_rand_spc,z_rand_spc);
-
 
 %% Compute the best-fit ellipsoid
 
@@ -137,10 +144,11 @@ PrintWhite([fig_folder 'Fig_hist.eps']);
 
 %% Spherical harmonics
 
-L=540;
+L=300;
 
 lmcosi_ceres_spc = xyz2plm(r_grid_spc',L);
 lmcosi_ceres_spg = xyz2plm(r_grid_spg',L);
+
 
 %% Power spectra
 
@@ -210,6 +218,40 @@ PrintWhite([fig_folder 'Fig_IsotropicRatio.jpg']);
 
 
 %% Compare gravity 
+
+[xref,yref,zref]=TriEllRadVec(lat_grid,lon_grid,aref,aref,cref,'xyz');
+
+lmcosi_gt_spc=Topo2Grav(1000*flipud(r_grid_spc'),Rref,...
+    MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
+lmcosi_gt_spg=Topo2Grav(1000*flipud(r_grid_spg'),Rref,...
+    MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
+
+in = fopen('gravityfromshape_spc_survey.txt','w');
+fprintf(in,'%d %d %23.16E %23.16E\n',lmcosi_gt_spc');
+fclose(in);
+
+in = fopen('gravityfromshape_spg_survey.txt','w');
+fprintf(in,'%d %d %23.16E %23.16E\n',lmcosi_gt_spg');
+fclose(in);
+
+
+[ax_gt_spc,ay_gt_spc,az_gt_spc]=GravityAcceleration(...
+    GM,Rref,lmcosi_gt_spc,xref,yref,zref);
+[g_up_gt_spc,g_east_gt_spc,g_north_gt_spc]=GravityComponents(...
+    ax_gt_spc,ay_gt_spc,az_gt_spc,xref,yref,zref,aref,cref);
+[ax_gt_spg,ay_gt_spg,az_gt_spg]=GravityAcceleration(...
+    GM,Rref,lmcosi_gt_spg,xref,yref,zref);
+[g_up_gt_spg,g_east_gt_spg,g_north_gt_spg]=GravityComponents(...
+    ax_gt_spg,ay_gt_spg,az_gt_spg,xref,yref,zref,aref,cref);
+
+AGUaxes;
+pcolorm(lat_grid*180/pi,lon_grid*180/pi,H);
+
+AGUaxes;
+pcolorm(lat_grid*180/pi,lon_grid*180/pi,(g_up_gt_spc-g_up_gt_spg)*1e5);
+cbar = colorbar('FontSize',fntsize);
+ylabel(cbar,'Gravitational acceleration difference [mGal]',...
+    'FontSize',fntsize);
 
 
 
