@@ -7,8 +7,8 @@ im_size=[0 0 13 9];
 fig_folder='~/Dawn/Figures/';
 
 %% Input data
-folder_path_root = '~/Dawn/FE/output/isovisc3/';
-L = 100; % max SH degree
+folder_path_root = '~/Dawn/FE/output/isovisc_new/';
+L = 50; % max SH degree
 
 all_content = dir(folder_path_root);
 dirFlags = [all_content.isdir];
@@ -21,6 +21,9 @@ lmcosi_ceres(4,3) = 0;
 Rref = 470;
 
 k = 1;
+
+% progressbar(0);
+
 for i=3:numel(subFolders)
     
     %% Reading data
@@ -49,8 +52,8 @@ for i=3:numel(subFolders)
     ylabel('Topography power [$\textrm{km}^{3}$]','FontSize',fntsize,...
         'interpreter','latex');
     
-    ylim([1e-0 1e14]);
-    xlim([1e-5 1e-0]);
+    ylim([1e-3 1e8]);
+    xlim([1e-4 1e-0]);
     
     % figure; hold on;
     % xlim([0 pi/2]);
@@ -70,25 +73,25 @@ for i=3:numel(subFolders)
     lmcosi_limb_0 = quad2plm(filename_quad{1},L);
     [sdl_limb_0,l_limb_0] = plm2spec(lmcosi_limb_0);
     
-%     figure(fig_spec);
+    figure(fig_spec);
    
     lambda=2*pi./l_ceres;
     lambda_linear=lambda*Rref;
     kf=1./lambda_linear;
     
-%     plot_ceres = plot(kf,sdl_ceres(3:end),...
-%         '-o','MarkerSize',2,'Color','k');
+    plot_ceres = plot(kf,sdl_ceres(1:end),...
+        '-o','MarkerSize',2,'Color','k');
     
-    [k_ceres,sdl_ceres]=PowerSpectrum(lmcosi_ceres);
-    plot_fit = plot(k_ceres,sdl_ceres,'-ok','MarkerSize',2,'Color','k');
+%     [k_ceres,sdl_ceres]=PowerSpectrum(lmcosi_ceres);
+%     plot_fit = plot(k_ceres,sdl_ceres,'-ok','MarkerSize',2,'Color','k');
 
 
     lambda=2*pi./l_limb_0(1:2:end);
     lambda_linear=lambda*Rref;
     kf=1./lambda_linear;
     
-%     plot_fit = plot(kf,sdl_limb_0(1:2:end),...
-%         '-o','MarkerSize',2,'Color','r');
+    plot_fit = plot(kf,sdl_limb_0(1:2:end),...
+        '-o','MarkerSize',2,'Color','r');
     
     for i = 2:numel(filename_quad)
         
@@ -99,7 +102,7 @@ for i=3:numel(subFolders)
         
         d = (log10(sdl_limb_0) - log10(sdl_limb(:,i-1)));
         tau(:,i-1) = t(i)./(log(sdl_limb_0) - log(sdl_limb(:,i-1)));
-%         figure(fig_spec);
+        figure(fig_spec);
         
         color_ind = fix((t(i)-min_t)/(max_t-min_t)*(Ncolors-1))+1;
         
@@ -107,12 +110,9 @@ for i=3:numel(subFolders)
         lambda_linear=lambda*Rref;
         kf=1./lambda_linear;
         
-%         pl_relax = plot(kf,sdl_limb(1:2:end,i-1)...
-%             ,'-o','MarkerSize',2,'Color',ccj(color_ind,:));
-          
-        %     pl_relax_homo = plot(l_limb(1:2:end),sdl_limb(1:2:end,i-1)...
-        %         ,'-o','MarkerSize',2,'Color',[0 0.7 0] );
-        
+        pl_relax = plot(kf,sdl_limb(1:2:end,i-1)...
+            ,'-o','MarkerSize',2,'Color',ccj(color_ind,:));
+                  
         drawnow;
     end
     
@@ -121,7 +121,11 @@ for i=3:numel(subFolders)
     
     k=k+1;
     
+%     progressbar(i/(numel(subFolders)-2));
+    
 end
+
+% progressbar(1);
 
 fig_spec=figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
