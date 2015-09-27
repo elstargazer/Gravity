@@ -1,12 +1,12 @@
 ccc
 
-EarthFileName='/Users/antonermakov/Earth/srtmp2160.ret_shape';
-MoonFileName='/Users/antonermakov/GRAIL/Topography/SH/LRO_LTM05_2050_SHA.TAB.txt';
-VenusFileName='/Users/antonermakov/Venus/VenusTopo719.shape';
-MarsFileName='/Users/antonermakov/Mars/MarsTopo719.shape';
+EarthFileName='/Users/antonermakov/Dawn/Data/Earth2012.shape_RET2012.SHCto2160.dat';
+MoonFileName='/Users/antonermakov/Dawn/Data/MoonTopo2600p.shape';
+VenusFileName='/Users/antonermakov/Dawn/Data/VenusTopo719.shape';
+MarsFileName='/Users/antonermakov/Dawn/Data/MarsTopo2600.shape';
 
 % VestaMatFileName='VestaHASTALAVESTAshape_sh1000.mat';
-VestaMatFileName='~/Dawn/SH/AnalysisSynthesis/VestaTest/SH_VestaHASTALAVESTAshape_6min';
+VestaMatFileName='/Users/antonermakov/Dawn/Data/SH_VestaShapeDLR_6m_mean';
 
 %% Vesta topo sh
 
@@ -19,8 +19,7 @@ lmcosi_Venus=load(VenusFileName);
 lmcosi_Mars=load(MarsFileName);
 lmcosi_Earth=load(EarthFileName);
 
-lmcosi_Ceres(:,3:4)=lmcosi_Ceres(:,3:4)*1000;
-
+load SH_Ceres_Survey_SPC;
 % lmcosi_Moon(:,3)=lmcosi_Moon(:,3)/lmcosi_Moon(1,3);
 % lmcosi_Moon(:,4)=lmcosi_Moon(:,4)/lmcosi_Moon(1,3);
 % 
@@ -47,7 +46,7 @@ lmcosi_Ceres(:,3:4)=lmcosi_Ceres(:,3:4)*1000;
 [k_Venus,sdl_Venus]=PowerSpectrum(lmcosi_Venus);
 [k_Earth,sdl_Earth]=PowerSpectrum(lmcosi_Earth);
 [k_Vesta,sdl_Vesta]=PowerSpectrum(lmcosi_Vesta);
-[k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_Ceres);
+[k_Ceres,sdl_Ceres]=PowerSpectrum(lmcosi_ceres);
 
 figure1 = figure('Color',[1 1 1]);
 
@@ -88,7 +87,7 @@ loglog(k_Mars,sdl_Mars,'b','MarkerFaceColor','b','MarkerSize',1,'Marker','o',...
 loglog(k_Earth,sdl_Earth,'c','MarkerFaceColor','b','MarkerSize',1,'Marker','o',...
     'LineWidth',1);
 loglog(k_Vesta,sdl_Vesta,'m','MarkerFaceColor','b','MarkerSize',1,'Marker','o',...
-    'LineWidth',1);
+     'LineWidth',1);
 loglog(k_Ceres,sdl_Ceres,'k','MarkerFaceColor','k','LineWidth',2,'MarkerSize',1,'Marker','o',...
     'LineWidth',1);
 

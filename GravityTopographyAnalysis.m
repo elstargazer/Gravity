@@ -8,8 +8,12 @@ im_size=[0 0 13 9];
 fig_folder='~/Dawn/Figures/';
 
 %% input parameters
-shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150716_GRAVITY_SPC/';
-shape_filename='SHAPE_SPC150716_256.bds';
+% SPC shape
+shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150828_GRAVITY_SPC/';
+shape_filename='SHAPE_SPC150828_512.bds';
+% SPG shape
+% shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPG/Survey/';
+% shape_filename='global.bds';
 
 [~,shapename,~] = fileparts(shape_filename) ;
 full_filename = [shape_folder shape_filename];
@@ -19,14 +23,14 @@ G     = 6.67384e-11;
 Rref  = 476000;
 aref  = 481000;
 cref  = 446000;
-step  = 0.5;
+step  = 0.1;
 r1    = 470000;
 T     = 9.073859324514187; % DLR
 Npts  = 50;
 
 M=GM/G;
 
-MaxDegreeTopo = 100;
+MaxDegreeTopo = 20;
 MaxDegreeGrav = 2;
 MaxTopoPower  = 4;
 
@@ -60,7 +64,6 @@ lmcosi_g = [0 0 1 0;
     2 2 2.34e-4 -2.71e-4];
 
 J2obs = -lmcosi_g(4,3);
-
 lmcosi_gt1_ell = SHRotationalEllipsoid(481000,446000,2,Rref); 
 
 %% plot topography
@@ -240,7 +243,7 @@ lmcosi_gtisos = Topo2IsosGrav(...
     flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),rhomean,MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
 
 MaxDegreeIsos=min([lmcosi_g(end,1) lmcosi_gtisos(end,1)]);
-lmcosi_isos = lmcosi_g;
+lmcosi_isos        = lmcosi_g;
 lmcosi_isos(:,3:4) = lmcosi_isos(:,3:4) - lmcosi_gtisos(:,3:4);
 
 [ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_isos,xref,yref,zref);
@@ -377,8 +380,6 @@ lmcosi_t_noJ2 = lmcosi_t;
 lmcosi_g_noJ2(4,3)=0;
 % lmcosi_gt_noJ2(4,3)=0;
 lmcosi_t_noJ2(4,3)=0;
-
-
 
 % cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
 % cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
