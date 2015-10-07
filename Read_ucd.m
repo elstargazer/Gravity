@@ -15,4 +15,6 @@ data = textscan(in,'%d %d %s %d %d %d %d\n',nelems);
 meshStruct.E = [(data{4}) (data{5}) ...
     (data{6}) (data{7})];
 
+meshStruct.cell_mat = data{2};
+
 fclose(in);
