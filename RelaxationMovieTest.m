@@ -6,19 +6,19 @@ fntsize_sm = 10;
 im_size=[0 0 20 20];
 fig_folder='~/Dawn/Figures/';
 
-ccj = {[0.0 0.3 0.9],[0.8 0.1 0.3]};
+ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
 
 %% Body parameters
 r   = 470;
 rho = 2161;
 T   = 7;
-L   = 40;
+L   = 80;
 Rref = 470;
 
 %% Read data
 
-movie_filename ='RelaxationMovie_large_contrast_4.avi';
-folder_path   = '/Users/antonermakov/Dawn/FE/output/output_1';
+movie_filename ='RelaxationMovie_large_cont_3.avi';
+folder_path   = '/Users/antonermakov/Dawn/FE/output/output_large_cont_movie';
 filename_mesh = getAllFiles(folder_path,'_mesh');
 filename_surf = getAllFiles(folder_path,'_surface');
 
@@ -26,8 +26,8 @@ data = load([folder_path '/physical_times.txt']);
 t = data(:,2)/(365.2422*86400);
 
 %% Hydrostatic equilibrium computation
-[fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
-[fh,fval]=HydrostaticStateExact2l(r*1000,410000,T,1465,2491,0.1, 0.1);
+% [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
+ [fh,fval]=HydrostaticStateExact2l(r*1000,415000,T,1465,2491,0.1, 0.1);
 
 [a,c]=f2axes(r,fh(1));
 
@@ -38,7 +38,7 @@ zell = c*sin(ang);
 %% Figure for the movie
 
 
-relax_pl = figure('Position',[1 1 1200 500]); 
+relax_pl = figure('Position',[1 1 1.2*1200 1.2*500],'Color','w'); 
 pl_shape = subplot(1,2,1);
 hold on;
 
@@ -109,10 +109,10 @@ lambda_linear=lambda*Rref;
 kf=1./lambda_linear;
 
 plot_ceres = plot(kf(1:2:end),sdl_limb(1:2:end),...
-    '-o','MarkerSize',2,'Color','k');
+    '-o','MarkerSize',2,'Color','k','LineWidth',3);
 
 plot(kf(1:2:end),sdl_limb(1:2:end),...
-    '-o','MarkerSize',2,'Color','r');
+    '-o','MarkerSize',2,'Color','r','LineWidth',3);
 
 v = VideoWriter(movie_filename);
 open(v);
