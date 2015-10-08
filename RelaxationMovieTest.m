@@ -11,23 +11,26 @@ ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
 %% Body parameters
 r   = 470;
 rho = 2161;
-T   = 7;
+T   = 1000;
 L   = 80;
 Rref = 470;
 
 %% Read data
 
-movie_filename ='RelaxationMovie_large_cont_3.avi';
-folder_path   = '/Users/antonermakov/Dawn/FE/output/output_large_cont_movie';
+movie_filename ='RelaxationMovie_3l.avi';
+folder_path   = '/Users/antonermakov/Dawn/FE/output/output_1';
 filename_mesh = getAllFiles(folder_path,'_mesh');
 filename_surf = getAllFiles(folder_path,'_surface');
+filename_pl   = getAllFiles(folder_path,'_failurelocations00');
 
 data = load([folder_path '/physical_times.txt']);
-t = data(:,2)/(365.2422*86400);
+t = data(:,2);
+
+
 
 %% Hydrostatic equilibrium computation
 % [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
- [fh,fval]=HydrostaticStateExact2l(r*1000,415000,T,1465,2491,0.1, 0.1);
+[fh,fval]=HydrostaticStateExact2l(r*1000,415000,T,1465,2491,0.1, 0.1);
 
 [a,c]=f2axes(r,fh(1));
 
@@ -98,6 +101,9 @@ end
 
 plot(xell,zell,'r--','LineWidth',4);
 
+fl = load(filename_pl{2});
+failure_plot = plot(fl(:,1)/1000,fl(:,2)/1000,'xy','MarkerSize',10);
+
 
 subplot(pl_spectrum);
 
@@ -136,6 +142,9 @@ for i=3:1:numel(filename_mesh)-1
         set(p(j),'XData',[V(E(j,1),1) V(E(j,2),1) V(E(j,3),1) V(E(j,4),1) V(E(j,1),1)]);
         set(p(j),'YData',[V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)]); 
     end
+    
+    fl = load(filename_pl{i});
+    set(failure_plot,'XData',fl(:,1)/1000,'YData',fl(:,2)/1000);
     
     lmcosi_limb = quad2plm(filename_surf{i},L);
     [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
