@@ -10,20 +10,20 @@ fig_folder='~/Dawn/Papers/CeresPaper1/';
 
 %% Input Paramerers;
 
-shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150702_GRAVITY_SPC/';
-shape_filename='SHAPE_SPC150702_256.bds';
+shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150828_GRAVITY_SPC/';
+shape_filename='SHAPE_SPC150828_512.bds';
 
 [~,shapename,~] = fileparts(shape_filename) ;
 
 full_filename = [shape_folder shape_filename];
 
-MaxDegreeTopo=23;
-Resolution=0.75;
-L=5;
+MaxDegreeTopo=100;
+Resolution=0.5;
+L=15;
 MinConcentration=0.80;
 NTess=3;
 circle_rad=30;
-gd=1+2+L:MaxDegreeTopo-L+1;
+gd=2+2+L:MaxDegreeTopo-L+1;
 
 a=481.000;
 c=446.000;
@@ -130,8 +130,6 @@ for j=1:numel(fii)
     end
 end
 
-
-
 %% Plot latitude vs spectrum curv
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
@@ -183,7 +181,85 @@ colormap jet;
 caxis([-7 7]);
 colorbar
 
+%% Clustering 
+
+Y = log10(sdl_mean(gd,:));
+
+NClucters=5;
+
+% Admittance clusters
+
+[idx,ctrs,sumd,D] = kmeans(Y',NClucters,'distance','sqEuclidean','onlinephase','on');
+cc=jet(NClucters);
+Dm=log10(min(D'));
+[madm,ixs]=sort(mean(ctrs,2));
+[~,ixs2]=sort(ixs);
+cc2=cc(ixs2,:);
+
+for i=1:NClucters
+    ctrs_std(:,i)=std(Y(:,idx==i),0,2);
+end
+
+%% 
+
+AGUaxes;
+scatterm(fii,lambdai,100,idx,'filled');
+
+% Voronoi diagram
+
+xu=cos(fii/180*pi).*cos(lambdai/180*pi);
+yu=cos(fii/180*pi).*sin(lambdai/180*pi);
+zu=sin(fii/180*pi);
+
+xyzu=[xu yu zu]';
+
+[P, K, voronoiboundary] = voronoisphere(xyzu,'resolution', 0.1/180*pi);
+
+% Graphic
+% 
+% f = figure(1);
+% clf(f);
+% set(f,'Renderer','zbuffer');
+% ax = axes('Parent', f);
+% hold(ax, 'on');
+% axis(ax,'equal');
+% 
+% plot3(ax, xyzu(1,:),xyzu(2,:),xyzu(3,:),'wo');
+% clmap = cool();
+% ncl = size(clmap,1);
+% 
+% for k = 1:numel(xu)
+%     X = voronoiboundary{k};
+%     cl = clmap(mod(k,ncl)+1,:);
+%     fill3(X(1,:),X(2,:),X(3,:),cc(idx(k),:),'Parent',ax,'EdgeColor','w');
+% end
+% 
+% alpha(0.5);
+% 
+% axis(ax,'equal');
+% axis(ax,[-1 1 -1 1 -1 1]);
+
+%% Mapping hexagons
+
+for k = 1:numel(xu)
+    X = voronoiboundary{k};
+%     cl = clmap(mod(k,ncl)+1,:);
+    [lambda_b,fi_b,~]=cart2sph(X(1,:),X(2,:),X(3,:));
+    plotm(fi_b*180/pi,lambda_b*180/pi,'-r','LineWidth',2);
+%      fillm(fi_b,lambda_b,0,cc3(idc(k),:),'EdgeColor','none');
+end
 
 
+AGUaxes; hold on
+% plot3(ax, xyzu(1,:),xyzu(2,:),xyzu(3,:),'wo');
+clmap = cool();
+ncl = size(clmap,1);
 
+for k = 1:numel(xu)
+    X = voronoiboundary{k};
+%     cl = clmap(mod(k,ncl)+1,:);
+    [lambda_b,fi_b,~]=cart2sph(X(1,:),X(2,:),X(3,:));
+    fillm(fi_b*180/pi,lambda_b*180/pi,0,cc2(idx(k),:),'EdgeColor','none');
+%      fillm(fi_b,lambda_b,0,cc3(idc(k),:),'EdgeColor','none');
+end
 
