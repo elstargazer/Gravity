@@ -185,7 +185,7 @@ colorbar
 
 Y = log10(sdl_mean(gd,:));
 
-NClucters=5;
+NClucters=3;
 
 % Admittance clusters
 
@@ -199,6 +199,22 @@ cc2=cc(ixs2,:);
 for i=1:NClucters
     ctrs_std(:,i)=std(Y(:,idx==i),0,2);
 end
+
+
+%%
+
+figure; hold on;
+set(gca,'FontSize',20);
+
+for i=1:NClucters    
+    plot(gd,ctrs(i,:),'-o','MarkerSize',3,'LineWidth',2,'Color',cc2(i,:));
+    h=errorbar(gd,ctrs(i,:),ctrs_std(:,i),'LineWidth',1,'Color',cc2(i,:));
+end
+
+xlabel('SH Degree','FontSize',20);
+ylabel('Topography Power []','FontSize',20);
+box on;
+grid on;
 
 %% 
 
@@ -248,7 +264,6 @@ for k = 1:numel(xu)
     plotm(fi_b*180/pi,lambda_b*180/pi,'-r','LineWidth',2);
 %      fillm(fi_b,lambda_b,0,cc3(idc(k),:),'EdgeColor','none');
 end
-
 
 AGUaxes; hold on
 % plot3(ax, xyzu(1,:),xyzu(2,:),xyzu(3,:),'wo');
