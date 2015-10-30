@@ -3,7 +3,7 @@ ccc
 %% Image settings
 fntsize = 20;
 fntsize_sm = 10;
-im_size=[0 0 20 20];
+im_size=[0 0 20 20]
 fig_folder='~/Dawn/Figures/';
 
 ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
@@ -11,42 +11,47 @@ ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
 %% Body parameters
 r   = 470;
 rho = 2161;
-T   = 1000;
-L   = 80;
+T   = 7.0;
+L   = 50;
 Rref = 470;
 
 %% Read data
 
-movie_filename ='RelaxationMovie_3l.avi';
+movie_filename ='RelaxationMovie_2l_newmesh_2.avi';
 folder_path   = '/Users/antonermakov/Dawn/FE/output/output_1';
 filename_mesh = getAllFiles(folder_path,'_mesh');
 filename_surf = getAllFiles(folder_path,'_surface');
 filename_pl   = getAllFiles(folder_path,'_failurelocations00');
+filename_ps   = getAllFiles(folder_path,'_principalstresses00');
+filename_viscbase  = getAllFiles(folder_path,'_baseviscosities');
+filename_viscreg   = getAllFiles(folder_path,'_viscositiesreg00');
+filename_stress    = getAllFiles(folder_path,'_stresstensor00');
+filename_flow      = getAllFiles(folder_path,'_flow00');
 
 data = load([folder_path '/physical_times.txt']);
 t = data(:,2);
 
-
-
 %% Hydrostatic equilibrium computation
 % [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
-[fh,fval]=HydrostaticStateExact2l(r*1000,415000,T,1465,2491,0.1, 0.1);
+[fh,fval]=HydrostaticStateExact2l(r*1000,r*1000-200000,T,1000,5000,0.1, 0.1);
 
 [a,c]=f2axes(r,fh(1));
+[a_cmb,c_cmb]=f2axes(r-200,fh(2));
 
 ang = linspace(0,pi/2,100);
 xell = a*cos(ang);
 zell = c*sin(ang);
 
+xell_cmb = a_cmb*cos(ang);
+zell_cmb = c_cmb*sin(ang);
+
 %% Figure for the movie
 
-
-relax_pl = figure('Position',[1 1 1.2*1200 1.2*500],'Color','w'); 
+relax_pl = figure('Position',[1 1 1.2*1200 1.2*500],'Color','w');
 pl_shape = subplot(1,2,1);
 hold on;
 
-xlim([0 500]);
-ylim([0 500]);
+
 xlabel('x [km]','FontSize',fntsize,'interpreter','latex');
 ylabel('z [km]','FontSize',fntsize,'interpreter','latex');
 box on;
@@ -79,31 +84,43 @@ set(gca,'XTick',0:100:500);
 set(gca,'YTick',0:100:500);
 
 title(['t = ' num2str(t(2),'%6.2e') ' [y]'],'FontSize',fntsize,'interpreter','latex');
-plot(xell,zell,'r--','LineWidth',4);
 
-xlim([0 500]);
-ylim([0 500]);
+
+xlim([0 600]);
+ylim([0 600]);
 
 meshStruct = Read_ucd(filename_mesh{2});
 V = meshStruct.V/1000;
 E = meshStruct.E;
 cell_mat = meshStruct.cell_mat;
-% draw and record first frame
 
-for j=1:size(E,1) 
+% draw and record first frame
+for j=1:size(E,1)
     
     color = ccj{cell_mat(j)+1};
     p(j) = patch([V(E(j,1),1) V(E(j,2),1) V(E(j,3),1) V(E(j,4),1) V(E(j,1),1)], ...
-        [V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)],color);    
+        [V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)],color);
     l(j) = line([V(E(j,1),1) V(E(j,2),1) V(E(j,3),1) V(E(j,4),1) V(E(j,1),1)], ...
-        [V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)],'Color','k');    
+        [V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)],'Color','k');
 end
 
-plot(xell,zell,'r--','LineWidth',4);
+plot(xell,zell,'k--','LineWidth',4);
+plot(xell_cmb,zell_cmb,'k--','LineWidth',4);
 
+% base viscocities
+bv = load(filename_viscbase{2});
+x = bv(:,1);
+z = bv(:,2);
+
+% plot faillure location
 fl = load(filename_pl{2});
-failure_plot = plot(fl(:,1)/1000,fl(:,2)/1000,'xy','MarkerSize',10);
-
+try
+    failure_plot = plot(fl(:,1)/1000,fl(:,2)/1000,'xy','MarkerSize',10);
+end
+% plot stresses
+s = load(filename_ps{2});
+% p_stresses_plot = scatter(x/1000,z/1000,10,s(:,1)./s(:,2),'filled');
+% caxis([0.2 5]);
 
 subplot(pl_spectrum);
 
@@ -135,21 +152,23 @@ for i=3:1:numel(filename_mesh)-1
     
     subplot(pl_shape);
     title(['t = ' num2str(t(i),'%6.2e') ' [y]'],'FontSize',fntsize,'interpreter','latex');
-       
-    for j=1:size(E,1)       
+    
+    for j=1:size(E,1)
         set(l(j),'XData',[V(E(j,1),1) V(E(j,2),1) V(E(j,3),1) V(E(j,4),1) V(E(j,1),1)]);
-        set(l(j),'YData',[V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)]); 
+        set(l(j),'YData',[V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)]);
         set(p(j),'XData',[V(E(j,1),1) V(E(j,2),1) V(E(j,3),1) V(E(j,4),1) V(E(j,1),1)]);
-        set(p(j),'YData',[V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)]); 
+        set(p(j),'YData',[V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)]);
     end
     
-    fl = load(filename_pl{i});
-    set(failure_plot,'XData',fl(:,1)/1000,'YData',fl(:,2)/1000);
+    try
+        fl = load(filename_pl{i});
+        set(failure_plot,'XData',fl(:,1)/1000,'YData',fl(:,2)/1000);
+    end
     
     lmcosi_limb = quad2plm(filename_surf{i},L);
     [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
     set(plot_ceres,'YData',sdl_limb(1:2:end));
-       
+    
     frame = getframe(gcf);
     writeVideo(v,frame);
     i/numel(filename_surf)
