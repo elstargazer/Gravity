@@ -15,8 +15,8 @@ T          = 9.074;
 
 %% MCMC run parameters
 
-N          = 50000; % number of iterations in a chain
-Nc         = 20; % number of chains
+N          = 10000; % number of iterations in a chain
+Nc         = 12; % number of chains
 s          = [1000, 50]; % step parameters
 
 min_core_rad = 10000;
@@ -66,7 +66,7 @@ param=cell(1,Nc);
 
 %% Run MCMC
 tic
-for j=1:Nc
+parfor j=1:Nc
     param_start = param0(j,:);
     param{j}    = mcmc_2l_run(N, s, data_obs, param_start, ...
         @cost_fun_flat,@step_param_flat,T,router,M);    
