@@ -2,6 +2,12 @@
 ccc;
 tic;
 
+%% plotting settings
+fntsize = 12;
+fntsize_sm = 10;
+im_size=[0 0 13 9];
+
+
 PhysicalConstants;
 
 %% Input parameters
@@ -21,7 +27,7 @@ s          = [1000, 50]; % step parameters
 
 min_core_rad = 10000;
 max_core_rad = 450000;
-min_core_rho = 2200;
+min_core_rho = 2160;
 max_core_rho = 5000;
 
 %% Basic calculations
@@ -42,7 +48,8 @@ rcore   = linspace(min_core_rad,max_core_rad,ngrid);
 rhocoreg= linspace(min_core_rho,max_core_rho,ngrid);
 
 [rhocorei,rcorei]=meshgrid(rhocoreg,rcore);
-rhoouteri=-(3*M-4*pi*(rcorei.^3).*rhocorei)./(4*pi*(rcorei.^3)-4*pi*(router^3));
+rhoouteri=-(3*M-4*pi*(rcorei.^3).*rhocorei)./...
+    (4*pi*(rcorei.^3)-4*pi*(router^3));
 
 %% Make initial values
 
@@ -80,29 +87,23 @@ for i=1:Nc
 end
 
 %% Plot heatmap
-numbins = 100;
-marker = '.';
-markersize = 20;
+% numbins = 100;
+% marker = '.';
+% markersize = 20;
+% 
+% outfile = heatscatter(param_all(:,1)/1000,param_all(:,2), ...
+%     [], 'CeresHeatScatter.png', numbins, ...
+%     markersize, marker, 1, 0, ...
+%     'Core radius [km]', 'Core density [kg/m^{3}]', []);
+% 
+% xlim([min_core_rad max_core_rad]/1000);
+% ylim([min_core_rho max_core_rho]);
+% 
+% set(gca,'FontSize',12);
+% box on
+% hold on
 
-outfile = heatscatter(param_all(:,1)/1000,param_all(:,2), ...
-    [], 'CeresHeatScatter.png', numbins, ...
-    markersize, marker, 1, 0, ...
-    'Core radius [km]', 'Core density [kg/m^{3}]', []);
 
-xlim([min_core_rad max_core_rad]/1000);
-ylim([min_core_rho max_core_rho]);
-
-set(gca,'FontSize',12);
-box on
-hold on
-
-levels = [1000 1250 1500 1750 2000 2500 3000];
-[C,h] = contour(rcorei/1000,rhocorei,rhoouteri,levels,...
-    'Color',[1 1 0],'LineWidth',2); shading interp;
-
-text_handle = clabel(C,h);
-set(text_handle,'BackgroundColor',[1 1 .6],...
-    'Edgecolor',[.4 .4 .4]);
 
 %% Plot another heat map
 
@@ -134,7 +135,52 @@ set(gca,'FontSize',12);
 box on
 hold on
 
-surf(xii/1000,yii,z'); shading interp;
+pcolor(xii/1000,yii,z'); shading interp;
+% plot(param_all(:,1)/1000,param_all(:,2),'.k');
+
+levels = [1000 1250 1500 1750 2000 2500 3000];
+[C,h] = contour(rcorei/1000,rhocorei,rhoouteri,levels,...
+    'Color',[1 1 0],'LineWidth',2); shading interp;
+
+text_handle = clabel(C,h);
+set(text_handle,'BackgroundColor',[1 1 .6],...
+    'Edgecolor',[.4 .4 .4]);
+
+%%
+
+rhoouter_mc=-(3*M-4*pi*(param_all(:,1).^3).*param_all(:,2))./...
+    (4*pi*(param_all(:,1).^3)-4*pi*(router^3));
+
+n=200;
+
+st = (router-param_all(:,1))/1000;
+
+xi = linspace(min(rhoouter_mc),max(rhoouter_mc),n);
+yi = linspace(min(st),max(st),n);
+
+xr = interp1(xi,1:numel(xi),rhoouter_mc,'nearest')';
+yr = interp1(yi,1:numel(yi),st,'nearest')';
+
+z = accumarray([xr' yr'], 1, [n n]);
+
+[xii,yii]=meshgrid(xi,yi);
+
+fig_shell=figure;
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+hold on;grid on; box on;
+
+pcolor(xii,yii,(z')); shading interp;
+% plot(rhoouter_mc,st,'.k');
+
+xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
+ylabel('Shell thickness [km]','FontSize',fntsize);
+xlim([min(rhoouter_mc) max(rhoouter_mc)]);
+ylim([min(st),max(st)]);
+
+
+
 
 
 
