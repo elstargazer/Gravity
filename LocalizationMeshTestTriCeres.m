@@ -18,11 +18,11 @@ shape_filename='SHAPE_SPC150828_512.bds';
 full_filename = [shape_folder shape_filename];
 
 MaxDegreeTopo=100;
-Resolution=0.5;
-L=15;
-MinConcentration=0.80;
-NTess=3;
-circle_rad=30;
+Resolution=1;
+L=20;
+MinConcentration=0.85;
+NTess=2;
+circle_rad=10;
 gd=2+2+L:MaxDegreeTopo-L+1;
 
 a=481.000;
@@ -56,6 +56,18 @@ fii=fii*180/pi;
 % fii=fii(1:10);
 Npoints=numel(fii);
 % MaxDegreeExp=fix(0.5*(-3+sqrt(1+8*Npoints)))
+
+%% Write small circle coordinates 
+
+for i=1:numel(fii)
+    
+    [lat_sc,lon_sc] = scircle1(fii(i),lambdai(i),circle_rad);   
+    filename = [num2str(i) '.cl'];    
+    in = fopen(filename,'w');   
+    fprintf(in,'%6.2f %6.2f\n',[lon_sc lat_sc]');
+    fclose(in);
+       
+end
 
 %% Using glmalphapto
 
@@ -111,83 +123,81 @@ for j=1:numel(fii)
         bq=p(2);
         
         xq(i) = mean(log10(l(gd)));
-        
-        curv(i) = 2*aq/((1+(bq+2*aq*xq(i)).^2).^1.5);
         bta(i) = p(1);
               
 %         p = polyfit(log10(l(gd)),log10(sdl_mean(gd,j)),2);
     end
     
     progressbar(j/numel(fii));
-    bta_mean(j)=mean(bta);
-    curv_mean(j)=mean(curv);
     
     if (NumberOfTapers>1)
         sdl_mean(:,j)=mean(sdl,2);
+        sdl_std(:,j) = std(sdl,0,2);
         
     else
         sdl_mean(:,j)=(sdl);
+        sdl_std(:,j) = NaN;
+
     end
 end
 
-%% Plot latitude vs spectrum curv
+%% Plot all power spectra
+
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
 set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
-hold on;box on;grid on;
-
-scatter(fii',curv_mean,40,lambdai','filled');
+hold on;grid on; box on;
+set(gca,'YScale','log');
+xlim([L+3 MaxDegreeTopo-L]);
 
 xlabel('Latitude [deg]','FontSize',fntsize);
-ylabel('Spectral slope','FontSize',fntsize);
+ylabel('Topography power','FontSize',fntsize); 
 
-cbar=colorbar('FontSize',fntsize);
-ylabel(cbar,'Longitude [deg]','FontSize',fntsize);
+plot(repmat(l,[1 size(sdl_mean,2)]),sdl_mean,'-','MarkerSize',2,'Color','k');
 
-xlim([-90 90]);
-set(gca,'XTick',-90:30:90);
-
-PrintWhite([fig_folder 'Fig_SpecSlope_' shapename '.jpg']);
-
-%% Plot power spectum slope as scatter map
-
-figure;
-set(gcf, 'Units','centimeters', 'Position',im_size)
-set(gcf, 'PaperPositionMode','auto')
-set(gca, 'FontSize',fntsize);
-hold on;box on;grid on;
-
-scatter(lambdai,fii',40,curv_mean,'filled');
-
-xlim([-180 180]);
-ylim([-90 90]);
-
-colorbar
 %% Plot power spectum slope as map
 
-Li=20;
-lmcosi_b=xyz2plm(curv_mean,Li,'irr',fii,lambdai);
+Li=25;
+lmcosi_pl=xyz2plm(sdl_pl,Li,'irr',fii,lambdai);
 
-[bta_mean_sh,lon,lat]=plm2xyz(lmcosi_b,0.5);
+[pl,lon,lat]=plm2xyz(lmcosi_pl,0.5);
 [lon,lat]=meshgrid(lon,lat);
 
 AGUaxes;
-pcolorm(lat,lon,bta_mean_sh); shading interp;
+pcolorm(lat,lon,pl); shading interp;
 
-AGUaxes;
-pcolorm(fi_grid*180/pi,lambda_grid*180/pi,Hi); shading interp;
-colormap jet;
-caxis([-7 7]);
-colorbar
+%% Power spectrum as a func of latitude
 
+Li = 22:1:50;
+
+figure;
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+hold on;grid on; box on;
+xlim([-90 90]);
+
+xlabel('Latitude [deg]','FontSize',fntsize);
+h_ylab = ylabel(['Topography power at n = ' num2str(Li(1))],'FontSize',fntsize); 
+
+sdl_pl = sdl_mean(Li(1),:);
+pl_pow = plot(fii,sdl_pl,'.','MarkerSize',10,'Color','k');
+
+for i=2:numel(Li) 
+    sdl_pl = sdl_mean(Li(i),:);
+    set(pl_pow,'YData',sdl_pl);   
+    h_ylab = ylabel(['Topography power at n = ' num2str(Li(i))],'FontSize',fntsize); 
+    waitforbuttonpress;
+end
+    
 %% Clustering 
 
 Y = log10(sdl_mean(gd,:));
 
 NClucters=3;
 
-% Admittance clusters
+%  spectrum clusters
 
 [idx,ctrs,sumd,D] = kmeans(Y',NClucters,'distance','sqEuclidean','onlinephase','on');
 cc=jet(NClucters);
@@ -199,7 +209,6 @@ cc2=cc(ixs2,:);
 for i=1:NClucters
     ctrs_std(:,i)=std(Y(:,idx==i),0,2);
 end
-
 
 %%
 
@@ -231,30 +240,6 @@ xyzu=[xu yu zu]';
 
 [P, K, voronoiboundary] = voronoisphere(xyzu,'resolution', 0.1/180*pi);
 
-% Graphic
-% 
-% f = figure(1);
-% clf(f);
-% set(f,'Renderer','zbuffer');
-% ax = axes('Parent', f);
-% hold(ax, 'on');
-% axis(ax,'equal');
-% 
-% plot3(ax, xyzu(1,:),xyzu(2,:),xyzu(3,:),'wo');
-% clmap = cool();
-% ncl = size(clmap,1);
-% 
-% for k = 1:numel(xu)
-%     X = voronoiboundary{k};
-%     cl = clmap(mod(k,ncl)+1,:);
-%     fill3(X(1,:),X(2,:),X(3,:),cc(idx(k),:),'Parent',ax,'EdgeColor','w');
-% end
-% 
-% alpha(0.5);
-% 
-% axis(ax,'equal');
-% axis(ax,[-1 1 -1 1 -1 1]);
-
 %% Mapping hexagons
 
 for k = 1:numel(xu)
@@ -277,4 +262,42 @@ for k = 1:numel(xu)
     fillm(fi_b*180/pi,lambda_b*180/pi,0,cc2(idx(k),:),'EdgeColor','none');
 %      fillm(fi_b,lambda_b,0,cc3(idc(k),:),'EdgeColor','none');
 end
+
+
+%%
+% 
+% figure;
+% set(gcf, 'Units','centimeters', 'Position',im_size)
+% set(gcf, 'PaperPositionMode','auto')
+% set(gca, 'FontSize',fntsize);
+% hold on;grid on; box on;
+% 
+% set(gca,'YScale','log');
+% 
+% step = 20;
+% lat_center = -90:step:90;
+% 
+% ccj = jet(numel(lat_center));
+% 
+% for i=1:numel(lat_center)
+%     
+%     
+%     ind = find(abs(fii - lat_center(i)) < step/2);
+%         
+%     sdl_lat_avg = mean(sdl_mean(gd,ind),2);
+%     sdl_lat_std =  std(sdl_mean(gd,ind),0,2);
+%       
+%     errorbar(gd,sdl_lat_avg,sdl_lat_std,'Color',ccj(i,:));
+% 
+% end
+% 
+% xlabel('Degree','FontSize',fntsize);
+
+
+
+
+
+
+
+
 
