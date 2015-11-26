@@ -16,8 +16,8 @@ shape_filename='SHAPE_SPC150828_512.bds';
 [~,shapename,~] = fileparts(shape_filename) ;
 full_filename = [shape_folder shape_filename];
 
-MaxDegreeTopo    = 60;
-Resolution       = 1.0;
+MaxDegreeTopo    = 120;
+Resolution       = 0.5;
 L                = 20;
 MinConcentration = 0.85;
 NTess            = 3;
@@ -28,15 +28,27 @@ gd=3+L:MaxDegreeTopo-L+1;
 a=481.000;
 c=446.000;
 
+%% Load topography model
+
 [x_grid,y_grid,z_grid]=ReadSPC(full_filename,Resolution,'grid');
 
 ri=sqrt(x_grid.^2+y_grid.^2+z_grid.^2);
-ri=ri';
+ri=flipud(ri');
 
+% expand in SH
 [~,~,Hi]=XYZ2BLH(x_grid,y_grid,z_grid,a,Eccentricity(a,c));
 [lambda_grid,fi_grid,~]=cart2sph(x_grid,y_grid,z_grid);
-%% Load topography model
 lmcosi_shape= xyz2plm(ri,MaxDegreeTopo);
+
+% check SH expansion by expanding back to spacial domain
+[ri_sh,lon_sh,lat_sh] = plm2xyz(lmcosi_shape);
+[lon_sh,lat_sh] = meshgrid(lon_sh,lat_sh);
+
+AGUaxes;
+pcolorm(lat_sh,lon_sh,ri_sh);
+
+AGUaxes;
+pcolorm(fi_grid*180/pi,lambda_grid*180/pi,Hi);
 
 %% Icosahedron mesh;
 TR=IcosahedronMesh;
@@ -124,7 +136,7 @@ for j=1:numel(fii)
         xq(i) = mean(log10(l(gd)));
         bta(i) = p(1);
         
-        %         p = polyfit(log10(l(gd)),log10(sdl_mean(gd,j)),2);
+        % p = polyfit(log10(l(gd)),log10(sdl_mean(gd,j)),2);
     end
     
     progressbar(j/numel(fii));
@@ -172,6 +184,8 @@ pcolorm(lat,lon,pl); shading interp;
 
 Li = L+3:1:MaxDegreeTopo-L;
 
+i = 1;
+
 figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
 set(gcf, 'PaperPositionMode','auto')
@@ -179,34 +193,62 @@ set(gca, 'FontSize',fntsize);
 hold on;grid on; box on;
 xlim([-90 90]);
 
+set(gca,'XTick',-90:30:90);
+
 fi_lin = -90:1:90;
 
 xlabel('Latitude [deg]','FontSize',fntsize);
-h_ylab = ylabel(['Topography power at n = ' num2str(Li(1))],'FontSize',fntsize);
+h_ylab = ylabel(['Topography power [km^2] at n = ' num2str(Li(1))],'FontSize',fntsize);
 
-sdl_pl = sdl_mean(Li(1),:);
+sdl_pl = sdl_mean(Li(i),:);
+sdl_err_pl = sdl_std(Li(i),:);
+
 pl_pow = plot(fii,sdl_pl,'.','MarkerSize',10,'Color','k');
+% errorbar(fii,sdl_pl,sdl_err_pl,'.','MarkerSize',10,'Color','r');
 
 [pfit,S] = polyfit(fii,sdl_pl',4);
 [sdl_lin,sdl_lin_std] = polyconf(pfit,fi_lin,S);
 
-p1 = plot(fi_lin,sdl_lin,'-k','LineWidth',1);   
+p1 = plot(fi_lin,sdl_lin,'-k','LineWidth',1);
 p2 = plot(fi_lin,sdl_lin-sdl_lin_std,'--r','LineWidth',1);
 p3 = plot(fi_lin,sdl_lin+sdl_lin_std,'--r','LineWidth',1);
 
-waitforbuttonpress;
+[binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
+errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
+
+set(gca,'YLim',[max(0,min(sdl_lin-sdl_lin_std))...
+    max(sdl_lin+sdl_lin_std)]);
+
+which_deg_to_print = 23;
+
+% waitforbuttonpress;
+
+if Li(i) == which_deg_to_print
+    disp(['printing for n = ' num2str(Li(i))]);
+    PrintWhite([fig_folder 'Fig_LocalizedTopo_' ...
+        num2str(Li(i)) '.jpg']);
+end
 
 for i=2:numel(Li)
     sdl_pl = sdl_mean(Li(i),:);
     set(pl_pow,'YData',sdl_pl);
     h_ylab = ylabel(['Topography power at n = ' num2str(Li(i))],'FontSize',fntsize);
-     
+    
     [pfit,S] = polyfit(fii,sdl_pl',4);
     [sdl_lin,sdl_lin_std] = polyconf(pfit,fi_lin,S);
     
     set(p1,'YData',sdl_lin);
     set(p2,'YData',sdl_lin-sdl_lin_std);
     set(p3,'YData',sdl_lin+sdl_lin_std);
+    
+    set(gca,'YLim',[max(0,min(sdl_lin-sdl_lin_std))...
+        max(sdl_lin+sdl_lin_std)]);
+    
+    if Li(i) == which_deg_to_print
+        disp(['printing for n = ' num2str(Li(i))]);
+        PrintWhite([fig_folder 'Fig_LocalizedTopo_' ...
+            num2str(Li(i)) '.jpg']);
+    end
     
     waitforbuttonpress;
 end
@@ -215,7 +257,6 @@ end
 %% Clustering
 
 Y = log10(sdl_mean(gd,:));
-
 NClucters=3;
 
 %  spectrum clusters
@@ -283,7 +324,6 @@ for k = 1:numel(xu)
     fillm(fi_b*180/pi,lambda_b*180/pi,0,cc2(idx(k),:),'EdgeColor','none');
     %      fillm(fi_b,lambda_b,0,cc3(idc(k),:),'EdgeColor','none');
 end
-
 
 %%
 %
