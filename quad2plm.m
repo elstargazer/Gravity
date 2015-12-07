@@ -6,11 +6,10 @@ data = load(filename);
 x_limb = data(:,1);
 z_limb = data(:,2);
 
-eps = 1;
-cond_bdry = (abs(x_limb) < eps | abs(z_limb < eps));
-
-x_limb(cond_bdry) = [];
-z_limb(cond_bdry) = [];
+% eps = 1;
+% cond_bdry = (abs(x_limb) < eps | abs(z_limb < eps));
+% x_limb(cond_bdry) = [];
+% z_limb(cond_bdry) = [];
 
 [~,lat,r] = cart2sph(x_limb,0,z_limb);
 
@@ -18,6 +17,8 @@ lati=(0:lat_step:90);
 ri = interp1(lat*180/pi,r,lati,'PCHIP');
 
 % lati = [-lati lati];
+% lati = [fliplr(lati) -lati(2:end)];
+
 ri   = [fliplr(ri) ri(2:end)];
 
 nlats = numel(ri);
