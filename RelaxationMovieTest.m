@@ -3,21 +3,26 @@ ccc
 %% Image settings
 fntsize = 20;
 fntsize_sm = 10;
-im_size=[0 0 20 20]
+im_size=[0 0 20 20];
 fig_folder='~/Dawn/Figures/';
 
-ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
+ccj = {[1 0 0 ],...
+       [0 1 0],...
+       [0 0 1],...
+       [0.6 0.6 0.6],...
+       [0.6 0.6 0.6],...
+       [0.6 0.6 0.6]};
 
 %% Body parameters
-r   = 470;
-rho = 2161;
-T   = 7.0;
-L   = 50;
+r    = 470;
+rho  = 2200;
+T    = 90000.0;
+L    = 80;
 Rref = 470;
 
 %% Read data
 
-movie_filename ='RelaxationMovie_2l_newmesh_2.avi';
+movie_filename ='RelaxationMovie_V2_new_ell_inv_eta.avi';
 folder_path   = '/Users/antonermakov/Dawn/FE/output/output_1';
 filename_mesh = getAllFiles(folder_path,'_mesh');
 filename_surf = getAllFiles(folder_path,'_surface');
@@ -33,10 +38,10 @@ t = data(:,2);
 
 %% Hydrostatic equilibrium computation
 % [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
-[fh,fval]=HydrostaticStateExact2l(r*1000,r*1000-200000,T,1000,5000,0.1, 0.1);
+[fh,fval]=HydrostaticStateExact2l(r*1000,r*1000-150000,T,2200,2200,0.1, 0.1);
 
 [a,c]=f2axes(r,fh(1));
-[a_cmb,c_cmb]=f2axes(r-200,fh(2));
+[a_cmb,c_cmb]=f2axes(r-150,fh(2));
 
 ang = linspace(0,pi/2,100);
 xell = a*cos(ang);
@@ -51,7 +56,6 @@ relax_pl = figure('Position',[1 1 1.2*1200 1.2*500],'Color','w');
 pl_shape = subplot(1,2,1);
 hold on;
 
-
 xlabel('x [km]','FontSize',fntsize,'interpreter','latex');
 ylabel('z [km]','FontSize',fntsize,'interpreter','latex');
 box on;
@@ -62,10 +66,19 @@ set(gca,'XScale','log');
 set(gca,'YScale','log');
 set(gca, 'FontSize',fntsize);
 xlabel('Frequency [cycles/km]','FontSize',fntsize,'interpreter','latex');
-ylabel('Topography power [$\textrm{km}^{3}$]','FontSize',fntsize,...
+ylabel('Spectral density [$\textrm{km}^{2}$]','FontSize',fntsize,...
     'interpreter','latex');
 
-ylim([1e2 1e8]);
+% load and plot read Ceres spectral density
+load('Spectral_Density_Ceres.mat');
+
+lambda_Ceres=2*pi./l_Ceres;
+lambda_linear_Ceres=lambda_Ceres*Rref;
+kf_Ceres=1./lambda_linear_Ceres;
+
+plot(kf_Ceres,sdl_Ceres,'-b','LineWidth',3);
+
+ylim([1e0 1e8]);
 xlim([1e-4 1e-1]);
 
 subplot(pl_shape)
@@ -84,7 +97,6 @@ set(gca,'XTick',0:100:500);
 set(gca,'YTick',0:100:500);
 
 title(['t = ' num2str(t(2),'%6.2e') ' [y]'],'FontSize',fntsize,'interpreter','latex');
-
 
 xlim([0 600]);
 ylim([0 600]);
@@ -139,6 +151,8 @@ plot(kf(1:2:end),sdl_limb(1:2:end),...
 
 v = VideoWriter(movie_filename);
 open(v);
+
+legend({'Real Ceres','Relaxed','Power Law'},'FontSize',fntsize);
 
 frame = getframe(gcf);
 writeVideo(v,frame);
