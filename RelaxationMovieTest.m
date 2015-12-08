@@ -76,9 +76,11 @@ lambda_Ceres=2*pi./l_Ceres;
 lambda_linear_Ceres=lambda_Ceres*Rref;
 kf_Ceres=1./lambda_linear_Ceres;
 
-plot(kf_Ceres,sdl_Ceres,'-b','LineWidth',3);
+cond_l = (l_Ceres > 1) & (l_Ceres < L);
 
-ylim([1e0 1e8]);
+plot(kf_Ceres(cond_l),sdl_Ceres(cond_l)/1e6,'-b','LineWidth',3);
+
+ylim([1e0 1e8]./1e6);
 xlim([1e-4 1e-1]);
 
 subplot(pl_shape)
@@ -117,7 +119,7 @@ for j=1:size(E,1)
 end
 
 plot(xell,zell,'k--','LineWidth',4);
-plot(xell_cmb,zell_cmb,'k--','LineWidth',4);
+% plot(xell_cmb,zell_cmb,'k--','LineWidth',4);
 
 % base viscocities
 bv = load(filename_viscbase{2});
@@ -143,10 +145,10 @@ lambda=2*pi./l_limb;
 lambda_linear=lambda*Rref;
 kf=1./lambda_linear;
 
-plot_ceres = plot(kf(1:2:end),sdl_limb(1:2:end),...
+plot_ceres = plot(kf(1:2:end),sdl_limb(1:2:end)/1e6,...
     '-o','MarkerSize',2,'Color','k','LineWidth',3);
 
-plot(kf(1:2:end),sdl_limb(1:2:end),...
+plot(kf(1:2:end),sdl_limb(1:2:end)/1e6,...
     '-o','MarkerSize',2,'Color','r','LineWidth',3);
 
 v = VideoWriter(movie_filename);
@@ -181,7 +183,7 @@ for i=3:1:numel(filename_mesh)-1
     
     lmcosi_limb = quad2plm(filename_surf{i},L);
     [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
-    set(plot_ceres,'YData',sdl_limb(1:2:end));
+    set(plot_ceres,'YData',sdl_limb(1:2:end)/1e6);
     
     frame = getframe(gcf);
     writeVideo(v,frame);
