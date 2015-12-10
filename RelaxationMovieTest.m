@@ -7,17 +7,18 @@ im_size=[0 0 20 20];
 fig_folder='~/Dawn/Figures/';
 
 ccj = {[1 0 0 ],...
-       [0 1 0],...
-       [0 0 1],...
-       [0.6 0.6 0.6],...
-       [0.6 0.6 0.6],...
-       [0.6 0.6 0.6]};
+    [0 1 0],...
+    [0 0 1],...
+    [0.6 0.6 0.6],...
+    [0.6 0.6 0.6],...
+    [0.6 0.6 0.6]};
 
 %% Body parameters
 r    = 470;
-rho  = 2200;
-T    = 90000.0;
-L    = 80;
+h    = 120;
+rho  = [2200, 2200];
+T    = 9.0;
+L    = 60;
 Rref = 470;
 
 %% Read data
@@ -37,11 +38,10 @@ data = load([folder_path '/physical_times.txt']);
 t = data(:,2);
 
 %% Hydrostatic equilibrium computation
-% [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
-[fh,fval]=HydrostaticStateExact2l(r*1000,r*1000-150000,T,2200,2200,0.1, 0.1);
+[fh,fval]=HydrostaticStateExact2l(r*1000,(r-h)*1000,T,rho(1),rho(2),0.1, 0.1);
 
 [a,c]=f2axes(r,fh(1));
-[a_cmb,c_cmb]=f2axes(r-150,fh(2));
+[a_cmb,c_cmb]=f2axes(r-h,fh(2));
 
 ang = linspace(0,pi/2,100);
 xell = a*cos(ang);
@@ -49,6 +49,16 @@ zell = c*sin(ang);
 
 xell_cmb = a_cmb*cos(ang);
 zell_cmb = c_cmb*sin(ang);
+
+fi = (-90:1:90);
+lambda = (-180:1:180);
+[fii,lambdai] = meshgrid(fi,lambda);
+r_ell = TriEllRadVec(fii/180*pi,lambdai/180*pi,a,a,c,'rad');
+lmcosi_hydrostatic1 = xyz2plm(r_ell',6);
+
+C20_1 = lmcosi_hydrostatic1(4,3);
+C40_1 = lmcosi_hydrostatic1(11,3);
+C60_1 = lmcosi_hydrostatic1(22,3);
 
 %% Figure for the movie
 
@@ -77,7 +87,6 @@ lambda_linear_Ceres=lambda_Ceres*Rref;
 kf_Ceres=1./lambda_linear_Ceres;
 
 cond_l = (l_Ceres > 1) & (l_Ceres < L);
-
 plot(kf_Ceres(cond_l),sdl_Ceres(cond_l)/1e6,'-b','LineWidth',3);
 
 ylim([1e0 1e8]./1e6);
@@ -138,12 +147,20 @@ s = load(filename_ps{2});
 
 subplot(pl_spectrum);
 
-lmcosi_limb = quad2plm(filename_surf{2},L);
+lmcosi_limb = quad2plm(filename_surf{1},L);
+
+% subtract hydrostatic signal
+lmcosi_limb(4,3) = lmcosi_limb(4,3) - 1000*C20_1;
+lmcosi_limb(11,3) = lmcosi_limb(11,3) - 1000*C40_1;
+lmcosi_limb(22,3) = lmcosi_limb(22,3) - 1000*C60_1;
+
 [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
 
 lambda=2*pi./l_limb;
 lambda_linear=lambda*Rref;
 kf=1./lambda_linear;
+
+
 
 plot_ceres = plot(kf(1:2:end),sdl_limb(1:2:end)/1e6,...
     '-o','MarkerSize',2,'Color','k','LineWidth',3);
@@ -182,7 +199,16 @@ for i=3:1:numel(filename_mesh)-1
     end
     
     lmcosi_limb = quad2plm(filename_surf{i},L);
+    
+    % subtract hydrostatic signal
+    lmcosi_limb(4,3) = lmcosi_limb(4,3) - 1000*C20_1;
+    lmcosi_limb(11,3) = lmcosi_limb(11,3) - 1000*C40_1;
+    lmcosi_limb(22,3) = lmcosi_limb(22,3) - 1000*C60_1;
+    
     [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
+    
+
+    
     set(plot_ceres,'YData',sdl_limb(1:2:end)/1e6);
     
     frame = getframe(gcf);
