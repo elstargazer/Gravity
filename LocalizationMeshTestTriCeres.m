@@ -10,20 +10,20 @@ fig_folder='~/Dawn/Papers/CeresPaper1/';
 
 %% Input Paramerers;
 
-shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150828_GRAVITY_SPC/';
-shape_filename='SHAPE_SPC150828_512.bds';
+shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPG/Survey_20151016/';
+shape_filename='global.bds';
 
 [~,shapename,~] = fileparts(shape_filename) ;
 full_filename = [shape_folder shape_filename];
 
-MaxDegreeTopo    = 120;
-Resolution       = 0.5;
+MaxDegreeTopo    = 100;
+Resolution       = 1.0;
 L                = 20;
 MinConcentration = 0.85;
 NTess            = 3;
 circle_rad       = 20;
 
-gd=3+L:MaxDegreeTopo-L+1;
+gd=4+L:MaxDegreeTopo-L+1;
 
 a=481.000;
 c=446.000;
@@ -163,14 +163,14 @@ set(gca,'YScale','log');
 xlim([L+3 MaxDegreeTopo-L]);
 
 xlabel('Latitude [deg]','FontSize',fntsize);
-ylabel('Topography power','FontSize',fntsize);
+ylabel('Spectral density','FontSize',fntsize);
 
 plot(repmat(l,[1 size(sdl_mean,2)]),sdl_mean,'-','MarkerSize',2,'Color','k');
 
 %% Plot power spectum slope as map
 
-Li=25;
-L_expand = 10;
+Li=23;
+L_expand = 8;
 sdl_pl = sdl_mean(find(l==Li),:);
 lmcosi_pl=xyz2plm(sdl_pl,L_expand,'irr',fii,lambdai);
 
@@ -198,7 +198,7 @@ set(gca,'XTick',-90:30:90);
 fi_lin = -90:1:90;
 
 xlabel('Latitude [deg]','FontSize',fntsize);
-h_ylab = ylabel(['Topography power [km^2] at n = ' num2str(Li(1))],'FontSize',fntsize);
+h_ylab = ylabel(['Spectral density [km^2] at n = ' num2str(Li(1))],'FontSize',fntsize);
 
 sdl_pl = sdl_mean(Li(i),:);
 sdl_err_pl = sdl_std(Li(i),:);
@@ -209,9 +209,9 @@ pl_pow = plot(fii,sdl_pl,'.','MarkerSize',10,'Color','k');
 [pfit,S] = polyfit(fii,sdl_pl',4);
 [sdl_lin,sdl_lin_std] = polyconf(pfit,fi_lin,S);
 
-p1 = plot(fi_lin,sdl_lin,'-k','LineWidth',1);
-p2 = plot(fi_lin,sdl_lin-sdl_lin_std,'--r','LineWidth',1);
-p3 = plot(fi_lin,sdl_lin+sdl_lin_std,'--r','LineWidth',1);
+% p1 = plot(fi_lin,sdl_lin,'-k','LineWidth',1);
+% p2 = plot(fi_lin,sdl_lin-sdl_lin_std,'--r','LineWidth',1);
+% p3 = plot(fi_lin,sdl_lin+sdl_lin_std,'--r','LineWidth',1);
 
 [binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
 errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
@@ -229,6 +229,9 @@ if Li(i) == which_deg_to_print
         num2str(Li(i)) '.jpg']);
 end
 
+which_deg_to_print = 40;
+
+
 for i=2:numel(Li)
     sdl_pl = sdl_mean(Li(i),:);
     set(pl_pow,'YData',sdl_pl);
@@ -237,13 +240,17 @@ for i=2:numel(Li)
     [pfit,S] = polyfit(fii,sdl_pl',4);
     [sdl_lin,sdl_lin_std] = polyconf(pfit,fi_lin,S);
     
-    set(p1,'YData',sdl_lin);
-    set(p2,'YData',sdl_lin-sdl_lin_std);
-    set(p3,'YData',sdl_lin+sdl_lin_std);
+    %     set(p1,'YData',sdl_lin);
+    %     set(p2,'YData',sdl_lin-sdl_lin_std);
+    %     set(p3,'YData',sdl_lin+sdl_lin_std);
     
     set(gca,'YLim',[max(0,min(sdl_lin-sdl_lin_std))...
         max(sdl_lin+sdl_lin_std)]);
     
+    
+    [binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
+    errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
+       
     if Li(i) == which_deg_to_print
         disp(['printing for n = ' num2str(Li(i))]);
         PrintWhite([fig_folder 'Fig_LocalizedTopo_' ...
@@ -252,6 +259,75 @@ for i=2:numel(Li)
     
     waitforbuttonpress;
 end
+
+%%
+
+figure('Color','k');
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize,'Color','k',...
+    'YColor','w','XColor','w');
+set(gca,'FontSize',fntsize);
+
+hold on;grid on; box on;
+
+i1 = find(Li==23);
+
+sdl_pl = sdl_mean(Li(i1),:);
+sdl_err_pl = sdl_std(Li(i1),:);
+
+plot(fii,sdl_pl,'.','MarkerSize',10,'Color','w');
+[binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
+errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
+
+xlabel('Latitude [deg]','FontSize',fntsize,'Color','w');
+ylabel(['Spectral density [km^2] at n = ' num2str(Li(i1))],'FontSize',fntsize,'Color','w');
+
+xlim([-90 90]);
+set(gca,'XTick',-90:30:90);
+
+
+%% Figure with subplots
+figure;
+set(gcf, 'Units','centimeters', 'Position',[0 0 26 9])
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+subplot(1,2,1);
+hold on;grid on; box on;
+
+i1 = find(Li==23);
+i2 = find(Li==40);
+
+sdl_pl = sdl_mean(Li(i1),:);
+sdl_err_pl = sdl_std(Li(i1),:);
+
+plot(fii,sdl_pl,'.','MarkerSize',10,'Color','k');
+[binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
+errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
+
+xlabel('Latitude [deg]','FontSize',fntsize);
+ylabel(['Spectral density [km^2] at n = ' num2str(Li(i1))],'FontSize',fntsize);
+
+xlim([-90 90]);
+set(gca,'XTick',-90:30:90);
+
+subplot(1,2,2);
+hold on;grid on; box on;
+
+sdl_pl = sdl_mean(Li(i2),:);
+sdl_err_pl = sdl_std(Li(i2),:);
+
+plot(fii,sdl_pl,'.','MarkerSize',10,'Color','k');
+[binCenters,binMean,binStandardDev]=rebin(fii,sdl_pl',3);
+errorbar(binCenters,binMean,binStandardDev,'.r','LineWidth',2);
+
+xlabel('Latitude [deg]','FontSize',fntsize);
+ylabel(['Spectral density [km^2] at n = ' num2str(Li(i2))],'FontSize',fntsize);
+
+xlim([-90 90]);
+set(gca,'XTick',-90:30:90);
+
+PrintWhite([fig_folder 'Fig_LocalizedTopo_23_40.jpg'])
 
 
 %% Clustering
@@ -353,6 +429,80 @@ end
 % end
 %
 % xlabel('Degree','FontSize',fntsize);
+
+
+%%
+
+fi_lin = linspace(0,90,5);
+ccj = jet(numel(fi_lin)-1);
+
+ccj = [1 0.2 0.2;
+       0.2 1 0.2;
+       0.2 0.2 1;
+       0 1 1];
+
+figure('Color','k');
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize,'Color','k',...
+    'YColor','w','XColor','w');
+set(gca,'FontSize',fntsize);
+set(gca,'YScale','Log');
+set(gca,'XScale','Log');
+
+hold on;box on;grid on;
+
+leg_text = cell(1,numel(fi_lin)-1);
+% leg_text{1} = 'global';
+% plot(repmat(l,[1 numel(fii)]),sdl_mean,'-b');
+% plot(l,sdl,'-k');
+
+for i=1:numel(fi_lin)-1
+    
+    cond = (abs(fii) > fi_lin(i)) &  (abs(fii) < fi_lin(i+1));
+    
+    sdl_sub = sdl_mean(:,cond); 
+    sdl_sub_mean = mean(sdl_sub,2);  
+    sdl_sub_mean_std = std(sdl_sub,0,2);  
+    
+    n_spec = sum(cond);
+
+    h(i) = plot(l(gd),sdl_sub_mean(gd),'-','Color',ccj(i,:),'LineWidth',3);
+%     
+
+if i==1
+% h_err = errorbar(l(gd),sdl_sub_mean(gd),sdl_sub_mean_std(gd)/sqrt(n_spec),...
+%          'Color',ccj(i,:),'LineWidth',1); 
+     
+     plot(l(gd),sdl_sub_mean(gd)+sdl_sub_mean_std(gd)/sqrt(n_spec),'.','Color',ccj(i,:),'MarkerSize',10);
+     plot(l(gd),sdl_sub_mean(gd)-sdl_sub_mean_std(gd)/sqrt(n_spec),'.','Color',ccj(i,:),'MarkerSize',10);
+
+end
+    
+      leg_text{i} = [num2str(fi_lin(i)) '^{\circ}' '- ' num2str(fi_lin(i+1)) '^{\circ}'];
+
+end
+
+
+legend(h,leg_text,'Color','k','TextColor','w','Color','k','TextColor','w');
+
+% lmcosi_shape_m = lmcosi_shape;
+% lmcosi_shape_m(:,3:4) = lmcosi_shape(:,3:4)*1000; 
+[sdl,l] = plm2spec(lmcosi_shape);
+
+xlabel('Spherical harmonic degree','FontSize',fntsize,'Color','w');
+ylabel('Spectral density [km^{2}]','FontSize',fntsize,'Color','w');
+
+PrintBlack([fig_folder 'Fig_LocalizedLatSpectra_k.jpg']);
+
+
+
+
+
+
+
+
+
 
 
 
