@@ -11,6 +11,8 @@ fig_folder='~/Dawn/Figures/';
 % SPC shape
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150828_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150828_512.bds';
+filename_grav = '/Users/antonermakov/Dawn/CeresGravityModel/CERES08A01/JGC08A01.sha';
+
 % SPG shape
 % shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPG/Survey/';
 % shape_filename='global.bds';
@@ -28,7 +30,7 @@ r1    = 470000;
 T     = 9.073859324514187; % DLR
 Npts  = 50;
 
-MaxDegreeTopo = 50;
+MaxDegreeTopo = 70;
 MaxDegreeGrav = 5;
 MaxTopoPower  = 4;
 
@@ -53,18 +55,16 @@ lmcosi_t = xyz2plm(flipud(r_grid'),MaxDegreeTopo);
 
 %% get gravity model in SH
 
-filename_grav = '/Users/antonermakov/Dawn/CeresGravityModel/CERES08A01/JGC08A01.sha';
 [lmcosi_g,Rref,GM,GM_std]=ReadGRAILGravityModel(filename_grav);
 lmcosi_g = [0 0 1 0 0 0; lmcosi_g];
 
-lmcosi_g = TruncateGravityModel(lmcosi_g,5,1)
+lmcosi_g = TruncateGravityModel(lmcosi_g,MaxDegreeGrav,1);
 % GM = GM*1e9;
 M=GM/G;
 rhomean = M/V;
 
 J2obs = -lmcosi_g(4,3);
 lmcosi_gt1_ell = SHRotationalEllipsoid(481000,446000,2,Rref); 
-
 
 %% plot topography
 
@@ -90,7 +90,10 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,H_eq/1000,'H_eq.dat');
 % rhocoreg=2000:100:4000;
 
 r2=linspace(10000,470000,Npts);
-rho2=linspace(rhomean,5000,Npts);
+r2 = r2(1:end-1);
+r2_add = linspace(r2(end),r1,5);
+r2 = [r2 r2_add(2:end)];
+rho2=linspace(rhomean,6000,Npts);
 
 [rho2i,r2i]=meshgrid(rho2,r2);
 
@@ -115,10 +118,12 @@ close(fig_todel);
 r2_Jh   = CJhyd(1,2:end-1);
 rho2_Jh = CJhyd(2,2:end-1);
 
-rho1_Jh  = griddata(r2i,rho2i,rho1i,r2_Jh,rho2_Jh,'linear');
-M2_Jh    = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'linear');
-fp2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'linear');
-fp1_Jh   = griddata(r2i,rho2i,f1i,r2_Jh,rho2_Jh,'linear');
+rho1_Jh  = griddata(r2i,rho2i,rho1i,r2_Jh,rho2_Jh,'cubic');
+M2_Jh    = griddata(r2i,rho2i,M2,r2_Jh,rho2_Jh,'cubic');
+fp2_Jh   = griddata(r2i,rho2i,f2i,r2_Jh,rho2_Jh,'cubic');
+fp1_Jh   = griddata(r2i,rho2i,f1i,r2_Jh,rho2_Jh,'cubic');
+
+save('2layer_solution.mat','rho1_Jh','rho2_Jh','r1','r2_Jh');
 
 M1_Jh = M - M2_Jh;
 
@@ -131,9 +136,9 @@ hold on;grid on; box on;
 plot(rho1_Jh,(r1-r2_Jh)/1000,'-b','LineWidth',3);
 
 rho1_lin = 800:50:2000;
-st_lin = interp1(rho1_Jh,(r1-r2_Jh)/1000,rho1_lin,'cubic');
-rho2_lin = interp1(rho1_Jh,rho2_Jh,rho1_lin,'cubic');
-r2_lin = interp1(rho1_Jh,r2_Jh,rho1_lin,'cubic');
+st_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),(r1-r2_Jh(~isnan(rho1_Jh)))/1000,rho1_lin,'cubic');
+rho2_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),rho2_Jh(~isnan(rho1_Jh)),rho1_lin,'cubic');
+r2_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),r2_Jh(~isnan(rho1_Jh)),rho1_lin,'cubic');
 
 xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
 ylabel('Shell thickness [km]','FontSize',fntsize);
@@ -152,15 +157,13 @@ set(gcf, 'PaperPositionMode','auto')
 set(gca, 'FontSize',fntsize);
 hold on;grid on; box on;
 
-plot((r1-r2_Jh)/1000,rho1_Jh,'or')
-plot((r1-r2_Jh)/1000,rho2_Jh,'ob')
+plot((r2_Jh)/1000,rho1_Jh,'-r')
+plot((r2_Jh)/1000,rho2_Jh,'-b')
 
 xlabel('Shell thickness [km]','FontSize',fntsize);
 ylabel('Density [kg/m^3]','FontSize',fntsize);
 
-
 legend({'Shell','Core'},'FontSize',fntsize_sm);
-
 
 in_2lmodel = fopen('2LayerModelJ2Grid.txt','w');
 fprintf(in_2lmodel,'rho1 (kg/m^3), rho2 (kg/m^3), h (km)\n');
@@ -251,31 +254,75 @@ PrintWhite([fig_folder 'Fig_BA.jpg']);
 %% Compute isostatic anomaly
 
 D_comp = r1 - r2_Jh(ind);
+ 
+% lmcosi_gtisos_lin = Topo2IsosGrav(...
+%     flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),...
+%     rhomean,MaxDegreeTopo,MaxDegreeGrav,1);
+% 
+% lmcosi_gtisos = Topo2IsosGrav(...
+%     flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),...
+%     rhomean,MaxDegreeTopo,MaxDegreeGrav,2);
+% 
+% MaxDegreeIsos=min([lmcosi_g(end,1) lmcosi_gtisos(end,1)]);
+% lmcosi_isos        = lmcosi_g;
+% lmcosi_isos(:,3:4) = lmcosi_isos(:,3:4) - lmcosi_gtisos(:,3:4);
+% 
+% [ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_isos,xref,yref,zref);
+% [gisos_up,~,~]=GravityComponents(...
+%     ax,ay,az,xref,yref,zref,aref,cref);
+% 
+% WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gisos_up*1e5,'ISOS.dat');
+% 
+% AGUaxes;
+% pcolorm(lat_grid*180/pi,lon_grid*180/pi,gisos_up*1e5); shading interp;
+% colorbar('FontSize',fntsize);
+% ylabel(cbar,'Isostatic anomaly [mGal]','FontSize',20);
+% 
+% PrintWhite([fig_folder 'Fig_ISOS.jpg']);
 
-lmcosi_gtisos_lin = Topo2IsosGrav(...
-    flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),...
-    rhomean,MaxDegreeTopo,MaxDegreeGrav,1);
+% Isos_coef = ((r1./r2_Jh).^2).*rho1_Jh./(rho2_Jh-rho1_Jh);
+% t = H_eq*Isos_coef(ind);
 
-lmcosi_gtisos = Topo2IsosGrav(...
-    flipud(r_grid'),Rref,D_comp,rho1_Jh(ind),rho2_Jh(ind),...
-    rhomean,MaxDegreeTopo,MaxDegreeGrav,2);
+t = FindCrustalRoot(r1,D_comp,H_eq,rho1_Jh(ind),rho2_Jh(ind)-rho1_Jh(ind));
 
-MaxDegreeIsos=min([lmcosi_g(end,1) lmcosi_gtisos(end,1)]);
-lmcosi_isos        = lmcosi_g;
-lmcosi_isos(:,3:4) = lmcosi_isos(:,3:4) - lmcosi_gtisos(:,3:4);
+r2_grid = TriEllRadVec(lat_grid,lon_grid,a_Jh,a_Jh,c_Jh,'rad');
+r2_grid = r2_grid - t;
+
+% r2_grid = r_grid - D_comp - h;
+
+[x2_grid,y2_grid,z2_grid] = sph2cart(lon_grid,lat_grid,r2_grid);
+
+lmcosi_gt2_isos=Topo2Grav(flipud(r2_grid'),Rref,...
+    MaxDegreeTopo,MaxDegreeGrav,MaxTopoPower);
+
+V1 = Mesh2Volume(x_grid,y_grid,z_grid);
+V2 = Mesh2Volume(x2_grid,y2_grid,z2_grid);
+
+M1_isos = rho1_Jh(ind)*V1;
+M2_isos = (rho2_Jh(ind)-rho1_Jh(ind))*V2;
+
+w_isos = [M1_isos/(M1_isos+M2_isos) M2_isos/(M1_isos+M2_isos)];
+    
+lmcosi_gt_isos = WeightSumExpansion(w,{lmcosi_gt1,lmcosi_gt2_isos});
+
+MaxDegreeIsos=min([lmcosi_g(end,1) lmcosi_gt_isos(end,1)]);
+lmcosi_isos = lmcosi_g;
+lmcosi_isos(:,3:4) = lmcosi_isos(:,3:4) - lmcosi_gt_isos(:,3:4);
+
+% lmcosi_isos(2:6,3:4)=0;
 
 [ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_isos,xref,yref,zref);
-[gisos_up,~,~]=GravityComponents(...
+[gisos_up,gisos_east,gisos_north]=GravityComponents(...
     ax,ay,az,xref,yref,zref,aref,cref);
 
 WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gisos_up*1e5,'ISOS.dat');
 
 AGUaxes;
 pcolorm(lat_grid*180/pi,lon_grid*180/pi,gisos_up*1e5); shading interp;
-colorbar('FontSize',fntsize);
+cbar = colorbar('FontSize',fntsize);
 ylabel(cbar,'Isostatic anomaly [mGal]','FontSize',20);
 
-PrintWhite([fig_folder 'Fig_ISOS.jpg']);
+WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gisos_up*1e5,'ISOS.dat');
 
 %% Compute subsurface interface
 
@@ -403,7 +450,13 @@ lmcosi_t_nonhydro(:,3:4) = lmcosi_t_nonhydro(:,3:4) - lmcosi_t_hydro(:,3:4);
 lmcosi_g_nonhydro = lmcosi_g;
 lmcosi_g_nonhydro(:,3:4) = lmcosi_g_nonhydro(:,3:4) - lmcosi_g_hydro(:,3:4);
 
-[n,Z_gt1] = SphericalHarmonicAdmittance(lmcosi_gt1,lmcosi_t,GM,Rref);
+lmcosi_gt_nonhydro = lmcosi_gt;
+lmcosi_gt_nonhydro(:,3:4) = lmcosi_gt_nonhydro(:,3:4) - lmcosi_g_hydro(:,3:4);
+
+lmcosi_gt_isos_nonhydro = lmcosi_gt_isos;
+lmcosi_gt_isos_nonhydro(:,3:4) = lmcosi_gt_isos_nonhydro(:,3:4) - lmcosi_g_hydro(:,3:4);
+
+% [n,Z_gt1] = SphericalHarmonicAdmittance(lmcosi_gt1,lmcosi_t,GM,Rref);
 
 % lmcosi_g_nonhydro(4,3) = 0;
 % lmcosi_t_nonhydro(4,3) = 0;
@@ -412,14 +465,15 @@ lmcosi_g_nonhydro(:,3:4) = lmcosi_g_nonhydro(:,3:4) - lmcosi_g_hydro(:,3:4);
 % lmcosi_t(4,3) = 0;
 
 % [n,Z_gw] = SphericalHarmonicAdmittance(lmcosi_g,lmcosi_t,GM,Rref);
+[n,Z_gt] = SphericalHarmonicAdmittance(lmcosi_gt_nonhydro,lmcosi_t,GM,Rref);
 [n,Z_g] = SphericalHarmonicAdmittance(lmcosi_g_nonhydro,lmcosi_t_nonhydro,GM,Rref);
 
 R0    = lmcosi_t(1,3);
 Z_theo  = 3./(2*(n)+1).*((R0/Rref).^n).*(n+1)*GM/(Rref^2)*1e5/R0*1000*...
     rho1_Jh(ind)/rhomean;
 
-[n,Z_isos] = SphericalHarmonicAdmittance(lmcosi_gtisos,lmcosi_t,GM,Rref);
-[n,Z_isos_lin] = SphericalHarmonicAdmittance(lmcosi_gtisos_lin,lmcosi_t,GM,Rref);
+[n,Z_isos] = SphericalHarmonicAdmittance(lmcosi_gt_isos_nonhydro,lmcosi_t,GM,Rref);
+% [n,Z_isos_lin] = SphericalHarmonicAdmittance(lmcosi_gtisos_lin,lmcosi_t,GM,Rref);
 
 fig_Z=figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
@@ -429,21 +483,25 @@ hold on;grid on; box on;
 set(gca,'XTick',1:100);
 
 plot(n,Z_g,'-b','LineWidth',3,'MarkerSize',5);
-plot(n,Z_gt1,'-k','LineWidth',3,'MarkerSize',5);
-plot(n,Z_theo,'-r','LineWidth',3,'MarkerSize',5);
-% plot(n,Z_isos,'-g','LineWidth',3,'MarkerSize',5);
-plot(n,Z_isos_lin,'-m','LineWidth',3,'MarkerSize',5);
+plot(n,Z_gt,'-k','LineWidth',3,'MarkerSize',5);
+plot(n,Z_isos,'-g','LineWidth',3,'MarkerSize',5);
 
-legend({'Observed','Homogeneous','Linear','Isostatic linear'},'FontSize',fntsize_sm);
+save('Z_g_obs.mat','n','Z_g');
+
+% plot(n,Z_theo,'-r','LineWidth',3,'MarkerSize',5);
+% plot(n,Z_isos,'-g','LineWidth',3,'MarkerSize',5);
+% plot(n,Z_isos_lin,'-m','LineWidth',3,'MarkerSize',5);
+
+legend({'Observed','2-layer'},'FontSize',fntsize_sm);
 xlabel('Degree','FontSize',fntsize);
 ylabel('Admittance [mGal/km]','FontSize',fntsize);
 
 PrintWhite(fig_Z,[fig_folder 'Fig_Z.jpg']);
 
 %% Correlation
-
-cor_gt_t = SphericalHarmonicCorrelation(lmcosi_gt1,lmcosi_t);
-cor_g_t = SphericalHarmonicCorrelation(lmcosi_g_nonhydro,lmcosi_t);
+cor_isos = SphericalHarmonicCorrelation(lmcosi_gt_isos_nonhydro,lmcosi_gt_nonhydro);
+cor_gt = SphericalHarmonicCorrelation(lmcosi_gt_nonhydro,lmcosi_gt_nonhydro);
+cor_g = SphericalHarmonicCorrelation(lmcosi_g_nonhydro,lmcosi_gt_nonhydro);
 
 fig_R=figure;
 set(gcf, 'Units','centimeters', 'Position',im_size)
@@ -456,11 +514,11 @@ xlim([2 5]);
 % ylim([-1 1]);
 
 n = 0:5;
-h_r_gt_t = plot(n,cor_gt_t,'-b','LineWidth',3,'MarkerSize',5);
-h_r_g_t = plot(n,cor_g_t,'-r','LineWidth',3,'MarkerSize',5);
+h_r_g = plot(n,cor_g,'-b','LineWidth',3,'MarkerSize',5);
+h_r_gt = plot(n,cor_gt,'-r','LineWidth',3,'MarkerSize',5);
+h_r_gt_isos = plot(n,cor_isos,'-g','LineWidth',3,'MarkerSize',5);
 
-
-legend([h_r_gt_t h_r_g_t], {'Homogeneous','Observed'},'FontSize',fntsize_sm);
+legend([h_r_g h_r_gt h_r_gt_isos], {'Observed','2-layer','Isostatic'},'FontSize',fntsize_sm);
 xlabel('Degree','FontSize',fntsize);
 ylabel('Correlation','FontSize',fntsize);
 
@@ -481,34 +539,4 @@ plot(l_g(l_g>1),sdl_g(l_g>1)./sdl_gt(l_g>1)*rhomean,'-k','LineWidth',3,'MarkerSi
 
 xlabel('Degree','FontSize',fntsize);
 ylabel('Effective density [kg/m^3]','FontSize',fntsize);
-
-%% Correlation
-
-lmcosi_g_noJ2 = lmcosi_g;
-lmcosi_gt_noJ2 = lmcosi_gt;
-lmcosi_t_noJ2 = lmcosi_t;
-
-lmcosi_g_noJ2(4,3)=0;
-lmcosi_gt_noJ2(4,3)=0;
-lmcosi_t_noJ2(4,3)=0;
-
-cor = SphericalHarmonicCorrelation(lmcosi_g,lmcosi_gt);
-cor_noJ2 = SphericalHarmonicCorrelation(lmcosi_g_noJ2,lmcosi_gt_noJ2);
-
-
-figure;
-set(gcf, 'Units','centimeters', 'Position',im_size)
-set(gcf, 'PaperPositionMode','auto')
-set(gca, 'FontSize',fntsize);
-hold on;grid on; box on;
-
-xlim([2 5]);
-ylim([-1 1]);
-
-plot(0:5,cor,'-b','LineWidth',5,'MarkerFaceColor','b','MarkerEdgeColor','b','Marker','o')
-plot(0:5,cor_noJ2,'-r','LineWidth',5,'MarkerFaceColor','r','MarkerEdgeColor','r','Marker','.')
-
-
-xlabel('Degree','FontSize',fntsize);
-ylabel('Correlation','FontSize',fntsize);
 
