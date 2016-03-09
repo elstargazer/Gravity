@@ -11,7 +11,7 @@ fig_folder='~/Dawn/Figures/';
 % SPC shape
 shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPC/CERES_SURVEY_150828_GRAVITY_SPC/';
 shape_filename='SHAPE_SPC150828_512.bds';
-filename_grav = '/Users/antonermakov/Dawn/CeresGravityModel/CERES08A01/JGC08A01.sha';
+filename_grav = '/Users/antonermakov/Dawn/CeresGravityModel/CERES18B01/JGC18B01.sha';
 
 % SPG shape
 % shape_folder='/Users/antonermakov/Dawn/CeresShapeModel/SPG/Survey/';
@@ -25,13 +25,13 @@ G     = 6.67384e-11;
 % Rref  = 476000;
 aref  = 481000;
 cref  = 446000;
-step  = 0.5;
+step  = 0.1;
 r1    = 470000;
 T     = 9.073859324514187; % DLR
-Npts  = 50;
+Npts  = 100;
 
-MaxDegreeTopo = 70;
-MaxDegreeGrav = 5;
+MaxDegreeTopo = 100;
+MaxDegreeGrav = 12;
 MaxTopoPower  = 4;
 
 %% get shape model in SH
@@ -59,12 +59,34 @@ lmcosi_t = xyz2plm(flipud(r_grid'),MaxDegreeTopo);
 lmcosi_g = [0 0 1 0 0 0; lmcosi_g];
 
 lmcosi_g = TruncateGravityModel(lmcosi_g,MaxDegreeGrav,1);
+lmcosi_g(4,3) = lmcosi_g(4,3);
 % GM = GM*1e9;
 M=GM/G;
 rhomean = M/V;
 
 J2obs = -lmcosi_g(4,3);
 lmcosi_gt1_ell = SHRotationalEllipsoid(481000,446000,2,Rref); 
+
+% Plot gravity spectrum with error spectrum
+h_grav_spec = figure;
+set(gcf, 'Units','centimeters', 'Position',im_size)
+set(gcf, 'PaperPositionMode','auto')
+set(gca, 'FontSize',fntsize);
+hold on;grid on; box on;
+
+set(gca,'YScale','log');
+set(gca,'XTick',2:MaxDegreeGrav);
+
+[sdl_grav,l_sdl] = plm2spec(lmcosi_g);
+[sdl_grav_std,l_sdl_std] = plm2spec([lmcosi_g(:,1:2) lmcosi_g(:,5:6)]);
+
+plot(l_sdl,sdl_grav,'or-','LineWidth',3,'MarkerSize',5);
+plot(l_sdl_std,sdl_grav_std,'ob-','LineWidth',3,'MarkerSize',5);
+
+xlim([2 MaxDegreeGrav])
+
+ylabel('Gravity PSD','FontSize',fntsize);
+xlabel('Degree','FontSize',fntsize);
 
 %% plot topography
 
@@ -91,7 +113,7 @@ WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,H_eq/1000,'H_eq.dat');
 
 r2=linspace(10000,470000,Npts);
 r2 = r2(1:end-1);
-r2_add = linspace(r2(end),r1,5);
+r2_add = linspace(r2(end),r1,10);
 r2 = [r2 r2_add(2:end)];
 rho2=linspace(rhomean,6000,Npts);
 
@@ -135,15 +157,26 @@ hold on;grid on; box on;
 
 plot(rho1_Jh,(r1-r2_Jh)/1000,'-b','LineWidth',3);
 
-rho1_lin = 800:50:2000;
-st_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),(r1-r2_Jh(~isnan(rho1_Jh)))/1000,rho1_lin,'cubic');
-rho2_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),rho2_Jh(~isnan(rho1_Jh)),rho1_lin,'cubic');
-r2_lin = interp1(rho1_Jh(~isnan(rho1_Jh)),r2_Jh(~isnan(rho1_Jh)),rho1_lin,'cubic');
+rho1_lin = 900:10:1900;
+
+cond_nan = ~isnan(rho1_Jh);
+st_lin = interp1(rho1_Jh(cond_nan),(r1-r2_Jh(cond_nan))/1000,rho1_lin,'cubic');
+rho2_lin = interp1(rho1_Jh(cond_nan),rho2_Jh(cond_nan),rho1_lin,'cubic');
+r2_lin = interp1(rho1_Jh(cond_nan),r2_Jh(cond_nan),rho1_lin,'cubic');
+
+ans = interp1(rho1_Jh(cond_nan),rho2_Jh(cond_nan), 1361.9    ,'cubic');
+
+% figure; hold on;
+% plot(rho1_Jh(cond_nan),rho2_Jh(cond_nan),'-or');
+% plot(rho1_lin,rho2_lin,'-ob');
 
 xlabel('Shell density [kg/m^{3}]','FontSize',fntsize);
 ylabel('Shell thickness [km]','FontSize',fntsize);
 
-gi = ginput(1);
+% gi = ginput(1);
+
+gi(1) = 1400;
+
 ind = find(abs(rho1_Jh - gi(1)) == min(abs(rho1_Jh - gi(1))));
 plot(rho1_Jh(ind),(r1-r2_Jh(ind))/1000,'or','MarkerSize',10);
 
@@ -151,24 +184,27 @@ PrintWhite(fig_shell,[fig_folder 'Fig_shell_pick.jpg']);
 
 % we have r1, r2_Jh, rho1_Jh, rho2_Jh = family of solutions for J2
 
-fig_shell=figure;
-set(gcf, 'Units','centimeters', 'Position',im_size)
-set(gcf, 'PaperPositionMode','auto')
-set(gca, 'FontSize',fntsize);
-hold on;grid on; box on;
-
-plot((r2_Jh)/1000,rho1_Jh,'-r')
-plot((r2_Jh)/1000,rho2_Jh,'-b')
-
-xlabel('Shell thickness [km]','FontSize',fntsize);
-ylabel('Density [kg/m^3]','FontSize',fntsize);
-
-legend({'Shell','Core'},'FontSize',fntsize_sm);
-
-in_2lmodel = fopen('2LayerModelJ2Grid.txt','w');
-fprintf(in_2lmodel,'rho1 (kg/m^3), rho2 (kg/m^3), h (km)\n');
-fprintf(in_2lmodel,'%6.2f, %6.2f, %6.2f\n',[rho1_lin; rho2_lin; st_lin]);
-fclose(in_2lmodel);
+% open Ryan2layer.fig
+% set(gcf, 'Units','centimeters', 'Position',im_size)
+% set(gcf, 'PaperPositionMode','auto')
+% set(gca, 'FontSize',fntsize);
+% hold on;grid on; box on;
+% 
+% plot((r2_Jh(cond_nan))/1000,rho1_Jh(cond_nan),'-om')
+% plot((r2_Jh(cond_nan))/1000,rho2_Jh(cond_nan),'-oc')
+% 
+% plot(r2_lin/1000,rho1_lin,'-ko')
+% plot(r2_lin/1000,rho2_lin,'-ko')
+% 
+% xlabel('Core radius  [km]','FontSize',fntsize);
+% ylabel('Density [kg/m^3]','FontSize',fntsize);
+% 
+% legend({'Shell','Core'},'FontSize',fntsize_sm);
+% 
+% in_2lmodel = fopen('2LayerModelJ2Grid.txt','w');
+% fprintf(in_2lmodel,'rho1 (kg/m^3), rho2 (kg/m^3), r2 (km)\n');
+% fprintf(in_2lmodel,'%6.2f, %6.2f, %6.2f\n',[rho1_lin; rho2_lin; r2_lin/1000]);
+% fclose(in_2lmodel);
 
 %% plot gravity
 
@@ -178,8 +214,8 @@ fclose(in_2lmodel);
 
 % computing free-air anomaly
 lmcosi_fa = lmcosi_g;
-lmcosi_fa(4,3) = 0;
-lmcosi_fa(1,3) = 0;
+% lmcosi_fa(4,3) = 0;
+% lmcosi_fa(1,3) = 0;
 
 [ax,ay,az]=GravityAcceleration(GM,Rref,lmcosi_fa,xref,yref,zref);
 [g_up_fa,g_east_fa,g_north_fa]=GravityComponents(ax,ay,az,xref,yref,zref,aref,cref);
@@ -248,6 +284,14 @@ AGUaxes;
 pcolorm(lat_grid*180/pi,lon_grid*180/pi,gba_up*1e5); shading interp;
 cbar = colorbar('FontSize',fntsize);
 ylabel(cbar,'Bouguer anomaly [mGal]','FontSize',20);
+
+BA = gba_up*1e5;
+
+image_BA = (BA - min(BA(:)))/...
+    (max(BA(:)) - min(BA(:)))*(2^16-1);
+
+imwrite(uint16(image_BA'),['Ceres_BA_BW_' ...
+    num2str(min(BA(:))) '_' num2str(max(BA(:))) '.png']);
 
 PrintWhite([fig_folder 'Fig_BA.jpg']);
 
@@ -324,6 +368,14 @@ ylabel(cbar,'Isostatic anomaly [mGal]','FontSize',20);
 
 WriteXYZ(lon_grid*180/pi,lat_grid*180/pi,gisos_up*1e5,'ISOS.dat');
 
+
+[sdl_isos,l_isos] = plm2spec(lmcosi_isos);
+[sdl_ba,l_ba] = plm2spec(lmcosi_ba);
+
+figure(h_grav_spec)
+h_isos_spec = plot(l_isos,sdl_isos,'om-','LineWidth',3,'MarkerSize',5,'MarkerFaceColor','m');
+h_ba_spec = plot(l_ba,sdl_ba,'ob-','LineWidth',3,'MarkerSize',5,'MarkerFaceColor','b');
+
 %% Compute subsurface interface
 
 lmcosi_sub = FindSubRelief(...
@@ -335,6 +387,12 @@ lmcosi_sub = FindSubRelief(...
 [ri1,lon,lat]     = plm2xyz(lmcosi_t,step);
 [lon,lat] = meshgrid(lon,lat);
 ct = (ri1 - ri2_sub)/1000;
+
+image_ct = (ct - min(ct(:)))/...
+    (max(ct(:)) - min(ct(:)))*(2^16-1);
+
+imwrite(uint16(image_ct),['Ceres_ct_BW_' ...
+    num2str(min(ct(:))) '_' num2str(max(ct(:))) '.png']);
 
 AGUaxes;
 pcolorm(lat,lon,ct);
@@ -492,7 +550,7 @@ save('Z_g_obs.mat','n','Z_g');
 % plot(n,Z_isos,'-g','LineWidth',3,'MarkerSize',5);
 % plot(n,Z_isos_lin,'-m','LineWidth',3,'MarkerSize',5);
 
-legend({'Observed','2-layer'},'FontSize',fntsize_sm);
+legend({'Observed','2-layer','Isostatic'},'FontSize',fntsize_sm);
 xlabel('Degree','FontSize',fntsize);
 ylabel('Admittance [mGal/km]','FontSize',fntsize);
 
@@ -510,10 +568,10 @@ set(gca, 'FontSize',fntsize);
 hold on;grid on; box on;
 set(gca,'XTick',1:100);
 
-xlim([2 5]);
+xlim([2 MaxDegreeGrav]);
 % ylim([-1 1]);
 
-n = 0:5;
+n = 0:MaxDegreeGrav;
 h_r_g = plot(n,cor_g,'-b','LineWidth',3,'MarkerSize',5);
 h_r_gt = plot(n,cor_gt,'-r','LineWidth',3,'MarkerSize',5);
 h_r_gt_isos = plot(n,cor_isos,'-g','LineWidth',3,'MarkerSize',5);
