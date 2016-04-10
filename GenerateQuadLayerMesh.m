@@ -1,9 +1,9 @@
-function meshStruct = GenerateQuadLayerMesh(lmcosi,lmcosi2,layer_mat,nsq,nl)
+function meshStruct = GenerateQuadLayerMesh(lmcosi,lmcosi2,layer_mat,nsq,nl,cube_side)
 
 layer_mat = flipud(layer_mat);
 
 %% Create inner cube mesh
-s = 150000;
+s = cube_side;
 
 [meshStruct0]=hexMeshSquare([s s],[nsq nsq]);
 
