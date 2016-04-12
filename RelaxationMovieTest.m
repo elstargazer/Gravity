@@ -6,8 +6,14 @@ fntsize_sm = 10;
 im_size=[0 0 20 20];
 fig_folder='~/Dawn/Figures/';
 
-ccj = {[0.0 0.3 1],[0.8 0.1 0.1]};
+ccj = {[1 0 0 ],...
+    [0 1 0],...
+    [0 0 1],...
+    [0.6 0.6 0.6],...
+    [0.6 0.6 0.6],...
+    [0.6 0.6 0.6]};
 
+<<<<<<< HEAD
 %% Files
 matlab_config_filename   = '~/Dawn/FE/config/ConfigurationMatlab.cfg';
 config_template_filename = '~/Dawn/FE/config/Run115_ds/Run115_1.cfg';
@@ -29,6 +35,20 @@ cfg = ReadConfig(Files);
 
 movie_filename ='RelaxationMovie_Run115_ds.avi';
 folder_path   = '/Users/antonermakov/Dawn/FE/output/Run115_ds/output_1/';
+=======
+%% Body parameters
+r    = 470;
+h    = 120;
+rho  = [2200, 2200];
+T    = 9.0;
+L    = 60;
+Rref = 470;
+
+%% Read data
+
+movie_filename ='RelaxationMovie_V2_new_ell_inv_eta.avi';
+folder_path   = '/Users/antonermakov/Dawn/FE/output/output_1';
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 filename_mesh = getAllFiles(folder_path,'_mesh');
 filename_surf = getAllFiles(folder_path,'00_surface');
 filename_pl   = getAllFiles(folder_path,'_failurelocations00');
@@ -61,6 +81,7 @@ lambda_linear=lambda_real*(cfg.r_mean/1000);
 k_real=1./lambda_linear;
 
 %% Hydrostatic equilibrium computation
+<<<<<<< HEAD
 % [fh,fval]=HydrostaticStateExact(r*1000,T,rho,0.1);
 
 [fh,fval]=HydrostaticStateExact2l(...
@@ -95,6 +116,12 @@ C60_2 = lmcosi_hydrostatic2(22,3);
 
 [a,c]=f2axes(cfg.r_mean,fh(1));
 [a_cmb,c_cmb]=f2axes((cfg.r_mean-cfg.depths_rho),fh(2));
+=======
+[fh,fval]=HydrostaticStateExact2l(r*1000,(r-h)*1000,T,rho(1),rho(2),0.1, 0.1);
+
+[a,c]=f2axes(r,fh(1));
+[a_cmb,c_cmb]=f2axes(r-h,fh(2));
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 
 ang = linspace(0,pi/2,100);
 xell = a*cos(ang);
@@ -103,12 +130,26 @@ zell = c*sin(ang);
 xell_cmb = a_cmb*cos(ang);
 zell_cmb = c_cmb*sin(ang);
 
+fi = (-90:1:90);
+lambda = (-180:1:180);
+[fii,lambdai] = meshgrid(fi,lambda);
+r_ell = TriEllRadVec(fii/180*pi,lambdai/180*pi,a,a,c,'rad');
+lmcosi_hydrostatic1 = xyz2plm(r_ell',6);
+
+C20_1 = lmcosi_hydrostatic1(4,3);
+C40_1 = lmcosi_hydrostatic1(11,3);
+C60_1 = lmcosi_hydrostatic1(22,3);
+
 %% Figure for the movie
 
 relax_pl = figure('Position',[1 1 1.2*1200 1.2*500],'Color','w');
 pl_shape = subplot(1,2,2);
 hold on;
+<<<<<<< HEAD
 set(gca, 'FontSize',fntsize);
+=======
+
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 xlabel('x [km]','FontSize',fntsize,'interpreter','latex');
 ylabel('z [km]','FontSize',fntsize,'interpreter','latex');
 box on;
@@ -123,6 +164,7 @@ set(gca,'XScale','log');
 set(gca,'YScale','log');
 set(gca, 'FontSize',fntsize);
 xlabel('Frequency [cycles/km]','FontSize',fntsize,'interpreter','latex');
+<<<<<<< HEAD
 ylabel('Topography non-hydrostatic PSD [$\textrm{km}^{2}$]','FontSize',fntsize,...
     'interpreter','latex');
 
@@ -150,6 +192,23 @@ h_real_spec = plot(k_real(3:end),sdl_real(3:end)/1e6,...
     '-o','MarkerSize',2,'Color','b','LineWidth',3);
 
 legend([h_real_spec],{'Observed'},'FontSize',fntsize);
+=======
+ylabel('Spectral density [$\textrm{km}^{2}$]','FontSize',fntsize,...
+    'interpreter','latex');
+
+% load and plot read Ceres spectral density
+load('Spectral_Density_Ceres.mat');
+
+lambda_Ceres=2*pi./l_Ceres;
+lambda_linear_Ceres=lambda_Ceres*Rref;
+kf_Ceres=1./lambda_linear_Ceres;
+
+cond_l = (l_Ceres > 1) & (l_Ceres < L);
+plot(kf_Ceres(cond_l),sdl_Ceres(cond_l)/1e6,'-b','LineWidth',3);
+
+ylim([1e0 1e8]./1e6);
+xlim([1e-4 1e-1]);
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 
 % PrintWhite(relax_pl,[fig_folder 'relax_1.jpg']);
 
@@ -192,10 +251,13 @@ V = meshStruct.V/1000;
 E = meshStruct.E;
 cell_mat = meshStruct.cell_mat;
 
+<<<<<<< HEAD
 % plot orig surface
 surf_data = load([folder_path 'time01_00_surface.txt']);
 h_orig_surf = plot(surf_data(:,1)/1000,surf_data(:,2)/1000,'k-','LineWidth',5);
 
+=======
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 xlim([0 600]);
 ylim([0 600]);
 
@@ -212,8 +274,13 @@ for j=1:size(E,1)
         [V(E(j,1),2) V(E(j,2),2) V(E(j,3),2) V(E(j,4),2) V(E(j,1),2)],'Color','k');
 end
 
+<<<<<<< HEAD
 plot(xell/1000,zell/1000,'y--','LineWidth',2);
 plot(xell_cmb/1000,zell_cmb/1000,'y--','LineWidth',2);
+=======
+plot(xell,zell,'k--','LineWidth',4);
+% plot(xell_cmb,zell_cmb,'k--','LineWidth',4);
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 
 % base viscocities
 bv = load(filename_viscbase{2});
@@ -230,10 +297,37 @@ s = load(filename_ps{2});
 % p_stresses_plot = scatter(x/1000,z/1000,10,s(:,1)./s(:,2),'filled');
 % caxis([0.2 5]);
 
+<<<<<<< HEAD
+=======
+subplot(pl_spectrum);
+
+lmcosi_limb = quad2plm(filename_surf{1},L);
+
+% subtract hydrostatic signal
+lmcosi_limb(4,3) = lmcosi_limb(4,3) - 1000*C20_1;
+lmcosi_limb(11,3) = lmcosi_limb(11,3) - 1000*C40_1;
+lmcosi_limb(22,3) = lmcosi_limb(22,3) - 1000*C60_1;
+
+[sdl_limb,l_limb] = plm2spec(lmcosi_limb);
+
+lambda=2*pi./l_limb;
+lambda_linear=lambda*Rref;
+kf=1./lambda_linear;
+
+
+
+plot_ceres = plot(kf(1:2:end),sdl_limb(1:2:end)/1e6,...
+    '-o','MarkerSize',2,'Color','k','LineWidth',3);
+
+plot(kf(1:2:end),sdl_limb(1:2:end)/1e6,...
+    '-o','MarkerSize',2,'Color','r','LineWidth',3);
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
 
 % record first frame
 v = VideoWriter(movie_filename);
 open(v);
+
+legend({'Real Ceres','Relaxed','Power Law'},'FontSize',fntsize);
 
 frame = getframe(gcf);
 writeVideo(v,frame);
@@ -262,6 +356,7 @@ for i=2:1:numel(filename_mesh)-1
     
     lmcosi_limb = quad2plm(filename_surf{i},L);
     
+<<<<<<< HEAD
     lmcosi_limb(4,3)  =  lmcosi_limb(4,3) - C20_1;
     lmcosi_limb(11,3) = lmcosi_limb(11,3) - C40_1;
     lmcosi_limb(22,3) = lmcosi_limb(22,3) - C60_1;
@@ -271,6 +366,18 @@ for i=2:1:numel(filename_mesh)-1
     
     legend([h_real_spec h_fit_spec plot_ceres],{'Observed','Power law fit','FE result'},'FontSize',fntsize);
 
+=======
+    % subtract hydrostatic signal
+    lmcosi_limb(4,3) = lmcosi_limb(4,3) - 1000*C20_1;
+    lmcosi_limb(11,3) = lmcosi_limb(11,3) - 1000*C40_1;
+    lmcosi_limb(22,3) = lmcosi_limb(22,3) - 1000*C60_1;
+    
+    [sdl_limb,l_limb] = plm2spec(lmcosi_limb);
+    
+
+    
+    set(plot_ceres,'YData',sdl_limb(1:2:end)/1e6);
+>>>>>>> 44e51ea7319896e29602a3314dbb77137b7ae0dc
     
     frame = getframe(gcf);
     writeVideo(v,frame);
