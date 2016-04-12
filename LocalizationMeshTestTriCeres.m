@@ -17,13 +17,13 @@ shape_filename='SHAPE_SPC150828_512.bds';
 
 full_filename = [shape_folder shape_filename];
 
-MaxDegreeTopo=100;
-Resolution=1;
-L=20;
+MaxDegreeTopo=120;
+Resolution=0.5;
+L=15;
 MinConcentration=0.85;
 NTess=2;
-circle_rad=10;
-gd=2+2+L:MaxDegreeTopo-L+1;
+circle_rad=15;
+gd=3+L:MaxDegreeTopo-L+1;
 
 a=481.000;
 c=446.000;
